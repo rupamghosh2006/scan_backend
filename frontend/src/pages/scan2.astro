@@ -1,0 +1,339 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+---
+<Layout>
+  <Navbar />
+
+  <!-- External Libraries -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
+
+  <main class="bg-cyan-50 min-h-screen text-gray-800 flex flex-col">
+    <section class="flex flex-col items-center p-4 flex-1">
+      <h1 class="text-2xl font-bold mb-4">Scan or Paste Question</h1>
+      <button onclick="showScanOptions()" class="bg-green-600 text-white px-6 py-2 rounded-full mt-2 hover:bg-green-700">
+        📷 Scan Image
+      </button>
+      <a href="https://pic2text.online" target="_blank" class="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">
+        Use Pic2Text OCR (external)
+      </a>
+
+      <input type="file" id="hiddenFileInput" accept="image/*" class="hidden" onchange="loadImageForCrop(this.files[0])" />
+
+      <div id="scanModal" class="fixed inset-0 bg-black bg-opacity-40 z-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">
+          <h2 class="text-xl font-semibold mb-4">Scan Options</h2>
+          <button onclick="triggerFileUpload()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2 w-full">📁 Choose File</button>
+          <button onclick="openCamera()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded w-full">📸 Take Photo</button>
+          <button onclick="closeScanModal()" class="text-gray-500 mt-4 underline text-sm">Cancel</button>
+        </div>
+      </div>
+
+      <video id="cameraStream" autoplay class="hidden w-full max-w-md rounded shadow mb-4"></video>
+      <canvas id="snapshotCanvas" class="hidden"></canvas>
+      <button id="captureBtn" onclick="captureFromCamera()" class="hidden bg-green-500 text-white px-4 py-2 rounded">📸 Capture</button>
+
+      <div id="cropContainer" class="hidden mt-4 max-w-md w-full">
+        <img id="cropImage" class="w-full rounded shadow" />
+        <button onclick="performCrop()" class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">✅ Crop & Scan</button>
+      </div>
+
+      <div id="output" class="my-4 max-w-md mx-auto"></div>
+
+      <div class="mb-6 w-full max-w-2xl">
+        <label class="block mb-1 font-medium">Paste Question or OCR Text:</label>
+        <textarea id="textOutput" rows="6" class="w-full p-2 border rounded" placeholder="Paste OCR text here or scan using image upload..."></textarea>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+  <div class="flex items-center gap-2">
+    <input type="checkbox" id="ansA" name="answerKey" value="A" onclick="toggleAnswer(this)" />
+    <input type="text" id="optA" placeholder="Option A" class="flex-1 p-2 border rounded" />
+  </div>
+  <div class="flex items-center gap-2">
+    <input type="checkbox" id="ansB" name="answerKey" value="B" onclick="toggleAnswer(this)" />
+    <input type="text" id="optB" placeholder="Option B" class="flex-1 p-2 border rounded" />
+  </div>
+  <div class="flex items-center gap-2">
+    <input type="checkbox" id="ansC" name="answerKey" value="C" onclick="toggleAnswer(this)" />
+    <input type="text" id="optC" placeholder="Option C" class="flex-1 p-2 border rounded" />
+  </div>
+  <div class="flex items-center gap-2">
+    <input type="checkbox" id="ansD" name="answerKey" value="D" onclick="toggleAnswer(this)" />
+    <input type="text" id="optD" placeholder="Option D" class="flex-1 p-2 border rounded" />
+  </div>
+</div>
+
+      </div>
+
+      <div class="bg-white p-4 mt-4 rounded shadow max-w-2xl w-full overflow-x-auto">
+        <h3 class="font-semibold text-lg mb-2">KaTeX Preview:</h3>
+        <div id="renderedQuestion" class="mb-2"></div>
+        <ul class="list-disc pl-5 space-y-1">
+          <li id="renderedA"></li>
+          <li id="renderedB"></li>
+          <li id="renderedC"></li>
+          <li id="renderedD"></li>
+        </ul>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 w-full max-w-2xl">
+        <select id="classSelect" class="p-2 border rounded">
+          <option disabled selected>Select Class</option>
+          <option value="11">Class 11</option>
+          <option value="12">Class 12</option>
+        </select>
+        <select id="subjectSelect" class="p-2 border rounded">
+          <option disabled selected>Select Subject</option>
+          <option value="Physics">Physics</option>
+          <option value="Chemistry">Chemistry</option>
+          <option value="Math">Math</option>
+          <option value="Biology">Biology</option>
+        </select>
+        <select id="chapterSelect" class="p-2 border rounded">
+          <option disabled selected>Select Chapter</option>
+        </select>
+      </div>
+
+      <button type="button" onclick="saveQuestion()" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-full mt-6">
+        SAVE
+      </button>
+    </section>
+
+    <script is:inline>
+    const textArea = document.getElementById("textOutput");
+    const optA = document.getElementById("optA");
+    const optB = document.getElementById("optB");
+    const optC = document.getElementById("optC");
+    const optD = document.getElementById("optD");
+
+    function toggleAnswer(clicked) {
+  // Uncheck other checkboxes
+  document.querySelectorAll("input[name='answerKey']").forEach(box => {
+    if (box !== clicked) box.checked = false;
+  });
+}
+
+//function getAnswerKey() {
+//  const selected = document.querySelector("input[name='answerKey']:checked");
+//  return selected ? selected.value : null;
+//}
+
+function getAnswerKey() {
+  const selected = document.querySelector("input[name='answerKey']:checked");
+  if (selected) {
+    const optionId = selected.id.replace("ans", "opt"); // e.g., ansA → optA
+    const optionInput = document.getElementById(optionId);
+    return optionInput ? optionInput.value.trim() : null;
+  }
+  return null;
+}
+
+
+
+    function katexRender(id, tex) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const formatted = tex.replace(/\s+/g, ' ').trim();
+      try {
+        katex.render(`\\text{${formatted.replace(/\\/g, '\\\\')}}`, el, {
+          throwOnError: false,
+          displayMode: false,
+        });
+      } catch (err) {
+        el.innerText = tex;
+      }
+    }
+
+    function renderAll() {
+      katexRender("renderedQuestion", textArea.value);
+      katexRender("renderedA", optA.value);
+      katexRender("renderedB", optB.value);
+      katexRender("renderedC", optC.value);
+      katexRender("renderedD", optD.value);
+    }
+
+    function parseTextToFields(text) {
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      let questionLines = [];
+      let options = { A: "", B: "", C: "", D: "" };
+      let currentOpt = "";
+
+      lines.forEach(line => {
+        if (/^\(?[Aa]\)?[\).:\s]/.test(line)) { currentOpt = 'A'; options.A = line; }
+        else if (/^\(?[Bb]\)?[\).:\s]/.test(line)) { currentOpt = 'B'; options.B = line; }
+        else if (/^\(?[Cc]\)?[\).:\s]/.test(line)) { currentOpt = 'C'; options.C = line; }
+        else if (/^\(?[Dd]\)?[\).:\s]/.test(line)) { currentOpt = 'D'; options.D = line; }
+        else if (currentOpt) {
+          options[currentOpt] += " " + line;
+        } else {
+          questionLines.push(line);
+        }
+      });
+
+      textArea.value = questionLines.join(" ");
+      optA.value = options.A.replace(/^\(?[Aa]\)?[\).:\s]*/i, "");
+      optB.value = options.B.replace(/^\(?[Bb]\)?[\).:\s]*/i, "");
+      optC.value = options.C.replace(/^\(?[Cc]\)?[\).:\s]*/i, "");
+      optD.value = options.D.replace(/^\(?[Dd]\)?[\).:\s]*/i, "");
+
+      renderAll();
+    }
+
+    function saveQuestion() {
+  const data = {
+    question: textArea.value,
+    options: {
+      A: optA.value,
+      B: optB.value,
+      C: optC.value,
+      D: optD.value,
+    },
+    correctAnswer: getAnswerKey(),
+    class: document.getElementById("classSelect").value,
+    subject: document.getElementById("subjectSelect").value,
+    chapter: document.getElementById("chapterSelect").value,
+  };
+  console.log("Saved Question Data:", data);
+  alert("Question saved to console!");
+}
+
+
+    textArea.addEventListener("input", renderAll);
+    optA.addEventListener("input", renderAll);
+    optB.addEventListener("input", renderAll);
+    optC.addEventListener("input", renderAll);
+    optD.addEventListener("input", renderAll);
+    textArea.addEventListener("paste", () => {
+      setTimeout(() => parseTextToFields(textArea.value), 100);
+    });
+
+    const chapterMap = {
+      "11-Physics": ["Units & Measurements", "Kinematics", "Laws of Motion", "Work, Power & Energy"],
+      "11-Chemistry": ["Some Basic Concepts", "Structure of Atom", "Periodic Table", "Chemical Bonding"],
+      "11-Math": ["Sets", "Relations & Functions", "Trigonometry", "Complex Numbers"],
+      "11-Biology": ["Diversity of Living World", "Cell", "Plant Physiology", "Human Physiology"],
+      "12-Physics": ["Electrostatics", "Current Electricity", "Magnetism", "Optics", "Modern Physics"],
+      "12-Chemistry": ["Solid State", "Solutions", "Electrochemistry", "Chemical Kinetics", "Biomolecules"],
+      "12-Math": ["Matrices & Determinants", "Differentiation", "Integration", "Vectors & 3D Geometry"],
+      "12-Biology": ["Reproduction", "Genetics", "Evolution", "Human Health & Diseases"]
+    };
+
+    const classSelect = document.getElementById("classSelect");
+    const subjectSelect = document.getElementById("subjectSelect");
+    const chapterSelect = document.getElementById("chapterSelect");
+
+    function updateChapters() {
+      const key = `${classSelect.value}-${subjectSelect.value}`;
+      chapterSelect.innerHTML = '<option disabled selected>Select Chapter</option>';
+      (chapterMap[key] || []).forEach(ch => {
+        const opt = document.createElement("option");
+        opt.value = ch;
+        opt.textContent = ch;
+        chapterSelect.appendChild(opt);
+      });
+    }
+
+    classSelect.addEventListener("change", updateChapters);
+    subjectSelect.addEventListener("change", updateChapters);
+
+    // Image scanning logic
+    let cropper;
+
+    function showScanOptions() {
+      document.getElementById('scanModal').classList.remove('hidden');
+    }
+
+    function closeScanModal() {
+      document.getElementById('scanModal').classList.add('hidden');
+    }
+
+    function triggerFileUpload() {
+      document.getElementById('hiddenFileInput').click();
+    }
+
+    function loadImageForCrop(file) {
+      closeScanModal();
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.getElementById('cropImage');
+        img.src = e.target.result;
+        document.getElementById('cropContainer').classList.remove('hidden');
+
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(img, {
+          aspectRatio: NaN,
+          viewMode: 1,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function openCamera() {
+      closeScanModal();
+      const video = document.getElementById('cameraStream');
+      const captureBtn = document.getElementById('captureBtn');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        captureBtn.classList.remove('hidden');
+      } catch (err) {
+        alert("Camera access denied or not available.");
+      }
+    }
+
+    function captureFromCamera() {
+      const video = document.getElementById('cameraStream');
+      const canvas = document.getElementById('snapshotCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.classList.add('hidden');
+      document.getElementById('captureBtn').classList.add('hidden');
+
+      const dataUrl = canvas.toDataURL('image/png');
+      loadImageForCropFromDataUrl(dataUrl);
+    }
+
+    function loadImageForCropFromDataUrl(dataUrl) {
+      const img = document.getElementById('cropImage');
+      img.src = dataUrl;
+
+      document.getElementById('cropContainer').classList.remove('hidden');
+
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(img, {
+        aspectRatio: NaN,
+        viewMode: 1,
+      });
+    }
+
+    function performCrop() {
+      const croppedCanvas = cropper.getCroppedCanvas();
+      const dataUrl = croppedCanvas.toDataURL('image/png');
+
+      document.getElementById('output').innerHTML = '';
+      const imgEl = new Image();
+      imgEl.src = dataUrl;
+      imgEl.className = "max-w-xs md:max-w-md rounded shadow";
+      document.getElementById('output').appendChild(imgEl);
+
+      Tesseract.recognize(dataUrl, "eng", {
+        logger: m => console.log(m)
+      }).then(({ data: { text } }) => {
+        parseTextToFields(text);
+        document.getElementById("cropContainer").classList.add("hidden");
+      });
+    }
+  </script>
+  </main>
+</Layout>
