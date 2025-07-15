@@ -1,9 +1,26 @@
 ---
 import QuestionList from "../components/Question";
-
+import Navbar from "../components/Navbar.astro";
 import Layout from "../layouts/Layout.astro";
+import Sidebar from "../components/Sidebar.astro";
+
+// read query params from URL
+const url = new URL(Astro.request.url);
+const filters = {
+  classNum: url.searchParams.get("class") || "",
+  subject: url.searchParams.get("subject") || "",
+  chapter: url.searchParams.get("chapter") || ""
+};
 ---
 
+<div class="flex min-h-screen">
+  <Sidebar />
+  <main class="flex-1 p-4">
+    <QuestionList client:load filters={filters} />
+  </main>
+</div>
+
 <Layout>
-  <QuestionList client:load/>
+    <Navbar />
+  <QuestionList client:visible/>
 </Layout>

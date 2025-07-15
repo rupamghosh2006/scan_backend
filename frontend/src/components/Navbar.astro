@@ -1,5 +1,7 @@
 ---
 const currentPath = Astro.url.pathname;
+import { ClientRouter } from "astro:transitions";
+
 ---
 
 <nav class="bg-white shadow-md py-2 px-4 flex justify-between items-center sticky top-0 z-50">
@@ -13,9 +15,15 @@ const currentPath = Astro.url.pathname;
     >Home</a>
 
     <a 
-      href="/scan" 
-      class={`font-medium ${currentPath === "/scan" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
+      href="/scan2" 
+      class={`font-medium ${currentPath === "/scan2" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
     >Scan</a>
+
+    <a 
+      href="/questionBank" 
+      class={`font-medium ${currentPath === "/questionBank" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
+    >Q Bank</a>
+
 
     <a 
       href="/test" 
@@ -28,3 +36,4 @@ const currentPath = Astro.url.pathname;
     >Profile</a>
   </div>
 </nav>
+<ClientRouter />
