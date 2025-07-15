@@ -36,4 +36,8 @@ const addQuestion = asyncHandler(async (req, res) => {
   });
 });
 
-export { addQuestion };
+
+export 
+{
+  addQuestion,
+ };
