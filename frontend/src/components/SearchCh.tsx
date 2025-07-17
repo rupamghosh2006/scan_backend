@@ -5,86 +5,46 @@ const class11: string[] = class11Chap();
 const class12: string[] = class12Chap();
 const chapters: string[] = [...class11, ...class12];
 
-
 interface Props {
   selectedClass: string;
+  onChapterSelect: (chapter: string) => void;
 }
 
-// const class11Chapters: string[] = [
-//   "Sets",
-//   "Relations and Functions",
-//   "Trigonometric Functions",
-//   "Principle of Mathematical Induction",
-//   "Complex Numbers and Quadratic Equations",
-//   "Linear Inequalities",
-//   "Permutations and Combinations",
-//   "Binomial Theorem",
-//   "Sequences and Series",
-//   "Straight Lines",
-//   "Conic Sections",
-//   "Introduction to Three Dimensional Geometry",
-//   "Limits and Derivatives",
-//   "Mathematical Reasoning",
-//   "Statistics",
-//   "Probability"
-// ];
-
-// const class12Chapters: string[] = [
-//   "Relations and Functions",
-//   "Inverse Trigonometric Functions",
-//   "Matrices",
-//   "Determinants",
-//   "Continuity and Differentiability",
-//   "Applications of Derivatives",
-//   "Integrals",
-//   "Applications of Integrals",
-//   "Differential Equations",
-//   "Vectors",
-//   "Three Dimensional Geometry",
-//   "Linear Programming",
-//   "Probability"
-// ];
-
-const ChapterSearch: React.FC<Props> = ({ selectedClass }) => {
+const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
   const [input, setInput] = useState<string>("");
   const [filtered, setFiltered] = useState<string[]>([]);
 
   const getChapters = (): string[] => {
     if (selectedClass === "11") return class11;
     if (selectedClass === "12") return class12;
-    if (selectedClass === "") return chapters;
-    return [];
+    return chapters;
   };
 
   useEffect(() => {
-    setInput("");      // Clear input on class change
-    setFiltered([]);   // Clear dropdown
+    setInput("");
+    setFiltered([]);
+    onChapterSelect(""); // Reset selected chapter on class change
   }, [selectedClass]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
-
-    const chapters = getChapters();
+    const availableChapters = getChapters();
     setFiltered(
       val
-        ? chapters.filter((ch) =>
+        ? availableChapters.filter((ch) =>
             ch.toLowerCase().includes(val.toLowerCase())
           )
         : []
     );
+    if (!val) onChapterSelect(""); // Clear filter if input is cleared
   };
 
   const handleSelect = (item: string) => {
     setInput(item);
     setFiltered([]);
+    onChapterSelect(item);
   };
-
-  // if (!selectedClass) {
-  //   return (
-  //     <p className="text-gray-500 text-sm italic">Please select a class first.</p>
-  //   );
-  // }
 
   return (
     <div className="relative w-full max-w-md">
