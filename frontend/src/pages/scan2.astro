@@ -87,12 +87,13 @@ import Navbar from "../components/Navbar.astro";
           <option value="12">Class 12</option>
         </select>
         <select id="subjectSelect" class="p-2 border rounded">
-          <option disabled selected>Select Subject</option>
+          <option disabled>Select Subject</option>
           <option value="Physics">Physics</option>
           <option value="Chemistry">Chemistry</option>
-          <option value="Math">Math</option>
+          <option value="Math" selected>Math</option>
           <option value="Biology">Biology</option>
         </select>
+
         <select id="chapterSelect" class="p-2 border rounded">
           <option disabled selected>Select Chapter</option>
         </select>
@@ -211,11 +212,38 @@ import Navbar from "../components/Navbar.astro";
       const chapterMap = {
         "11-Physics": ["Units & Measurements", "Kinematics", "Laws of Motion", "Work, Power & Energy"],
         "11-Chemistry": ["Some Basic Concepts", "Structure of Atom", "Periodic Table", "Chemical Bonding"],
-        "11-Math": ["Sets", "Relations & Functions", "Trigonometry", "Complex Numbers"],
+        "11-Math": ["Sets",
+          "Relations and Functions",
+          "Trigonometric Functions",
+          "Principle of Mathematical Induction",
+          "Complex Numbers and Quadratic Equations",
+          "Linear Inequalities",
+          "Permutations and Combinations",
+          "Binomial Theorem",
+          "Sequences and Series",
+          "Straight Lines",
+          "Conic Sections",
+          "Introduction to Three Dimensional Geometry",
+          "Limits and Derivatives",
+          "Mathematical Reasoning",
+          "Statistics",
+          "Probability"],
         "11-Biology": ["Diversity of Living World", "Cell", "Plant Physiology", "Human Physiology"],
         "12-Physics": ["Electrostatics", "Current Electricity", "Magnetism", "Optics", "Modern Physics"],
         "12-Chemistry": ["Solid State", "Solutions", "Electrochemistry", "Chemical Kinetics", "Biomolecules"],
-        "12-Math": ["Matrices & Determinants", "Differentiation", "Integration", "Vectors & 3D Geometry"],
+        "12-Math": ["Relations and Functions",
+          "Inverse Trigonometric Functions",
+          "Matrices",
+          "Determinants",
+          "Continuity and Differentiability",
+          "Applications of Derivatives",
+          "Integrals",
+          "Applications of Integrals",
+          "Differential Equations",
+          "Vectors",
+          "Three Dimensional Geometry",
+          "Linear Programming",
+          "Probability"],
         "12-Biology": ["Reproduction", "Genetics", "Evolution", "Human Health & Diseases"]
       };
 
