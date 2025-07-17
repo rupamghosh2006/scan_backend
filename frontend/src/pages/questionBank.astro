@@ -2,9 +2,11 @@
 import QuestionList from "../components/Question";
 import Navbar from "../components/Navbar.astro";
 import Layout from "../layouts/Layout.astro";
+import Sidebar from "../components/SideBar";
 ---
 
 <Layout>
   <Navbar />
-  <QuestionList client:load/>
+  <Sidebar client:load />
+  <QuestionList client:load />
 </Layout>
