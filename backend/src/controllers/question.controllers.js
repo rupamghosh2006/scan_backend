@@ -37,7 +37,59 @@ const addQuestion = asyncHandler(async (req, res) => {
 });
 
 
-export 
-{
+// Delete a question by ID
+const deleteQuestion = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const question = await Question.findByIdAndDelete(id);
+
+  if (!question) {
+    return res.status(404).json({
+      success: false,
+      message: "Question not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Question deleted successfully",
+  });
+});
+
+// Update a question by ID
+const updateQuestion = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { chapter, class: classNum, correctAnswer, options, question, subject } = req.body;
+
+  const updated = await Question.findByIdAndUpdate(
+    id,
+    {
+      chapter,
+      class: classNum,
+      correctAnswer,
+      options,
+      question,
+      subject,
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    return res.status(404).json({
+      success: false,
+      message: "Question not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Question updated successfully",
+    data: updated,
+  });
+});
+
+export {
   addQuestion,
- };
+  deleteQuestion,
+  updateQuestion
+};
