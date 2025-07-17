@@ -139,7 +139,7 @@ const QuestionList: React.FC = () => {
 
             {/* Options */}
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4">
-              {(isEditing ? editedQuestion.options : q.options).map((opt, idx) => (
+              {(isEditing ? editedQuestion.options : q.options)?.map((opt, idx) => (
                 <li key={idx}>
                   {isEditing ? (
                     <input
