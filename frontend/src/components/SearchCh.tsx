@@ -13,6 +13,7 @@ interface Props {
 const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
   const [input, setInput] = useState<string>("");
   const [filtered, setFiltered] = useState<string[]>([]);
+  const [prevClass, setPrevClass] = useState<string>("");
 
   const getChapters = (): string[] => {
     if (selectedClass === "11") return class11;
@@ -21,23 +22,25 @@ const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
   };
 
   useEffect(() => {
-    setInput("");
-    setFiltered([]);
-    onChapterSelect(""); // Reset selected chapter on class change
+    if (selectedClass !== prevClass) {
+      setPrevClass(selectedClass);
+      setInput("");
+      setFiltered([]);
+      onChapterSelect(""); // Reset selected chapter on class change
+    }
   }, [selectedClass]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
     const availableChapters = getChapters();
-    setFiltered(
-      val
-        ? availableChapters.filter((ch) =>
-            ch.toLowerCase().includes(val.toLowerCase())
-          )
-        : []
-    );
-    if (!val) onChapterSelect(""); // Clear filter if input is cleared
+    const results = val
+      ? availableChapters.filter((ch) =>
+          ch.toLowerCase().includes(val.toLowerCase())
+        )
+      : [];
+    setFiltered(results);
+    if (!val) onChapterSelect(""); // Reset on empty input
   };
 
   const handleSelect = (item: string) => {

@@ -10,9 +10,9 @@ const Sidebar = () => {
     <div className="flex flex-col md:flex-row">
       {/* Sidebar */}
       <div className="flex-col p-6 gap-3.5 shrink-0">
-        <h1 className="font-bold">SELECT CLASS:</h1>
+        {/* <h1 className="font-bold">SELECT CLASS:</h1> */}
         <div className="flex gap-2">
-          <button
+          {/* <button
             className={`border border-black p-1.5 rounded-full h-10 ${
               selectedClass === "11" ? "bg-red-600 text-white" : "bg-red-400"
             }`}
@@ -33,7 +33,7 @@ const Sidebar = () => {
             }}
           >
             CLASS 12
-          </button>
+          </button> */}
         </div>
         <br />
         <h1 className="font-bold">SELECT CHAPTER:</h1>
