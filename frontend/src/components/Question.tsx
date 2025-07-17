@@ -78,39 +78,48 @@ const QuestionList: React.FC = () => {
             className="bg-white shadow-lg rounded-xl p-6 border border-gray-200 flex flex-col gap-4"
           >
             {/* Action Buttons */}
-            <div className="flex justify-end gap-2">
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={() => saveEdit(q._id)}
-                    className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="px-3 py-1 text-sm bg-gray-400 text-white rounded hover:bg-gray-500"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => startEditing(index)}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(q._id)}
-                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </>
-              )}
-            </div>
+<div className="flex justify-between items-center">
+  {/* Chapter badge on the left */}
+  <p className="border border-amber-500 bg-amber-200 rounded-xl px-2 py-0.5 text-sm font-medium">
+    {q.chapter}
+  </p>
+
+  {/* Action buttons on the right */}
+  <div className="flex gap-2">
+    {isEditing ? (
+      <>
+        <button
+          onClick={() => saveEdit(q._id)}
+          className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          Save
+        </button>
+        <button
+          onClick={cancelEdit}
+          className="px-3 py-1 text-sm bg-gray-400 text-white rounded hover:bg-gray-500"
+        >
+          Cancel
+        </button>
+      </>
+    ) : (
+      <>
+        <button
+          onClick={() => startEditing(index)}
+          className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => handleDelete(q._id)}
+          className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Delete
+        </button>
+      </>
+    )}
+  </div>
+</div>
+
 
             {/* Question Text */}
             {isEditing ? (
