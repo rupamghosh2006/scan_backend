@@ -60,5 +60,29 @@ import Navbar from "../../components/Navbar.astro";
       }
     }
     </script>
+    <script is:inline>
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    alert("Please login first.");
+    window.location.href = "/";
+  } else {
+    fetch("http://localhost:4000/api/v1/students/validate", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).then(res => {
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }
+    }).catch(err => {
+      console.error("Validation error:", err);
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    });
+  }
+</script>
+
   </main>
 </Layout>
