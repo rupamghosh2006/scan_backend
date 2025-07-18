@@ -4,4 +4,34 @@ import StudentLayout from "../../layouts/StudentLayout.astro"
 
 <StudentLayout>
     <h1 class="flex align-middle justify-center font-bold">THIS IS STUDENTS PAGE</h1>
+    <button 
+      onclick="logout()"
+      class="bg-red-600 hover:bg-red-700 transition-colors duration-300 text-white font-medium py-2 px-6 rounded-full shadow-sm">
+      Logout
+    </button>
+
+    <script is:inline>
+        async function logout() {
+      try {
+        const response = await fetch("http://localhost:4000/api/v1/students/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert(result.message || "Logged out!");
+          window.location.href = "/";
+        } else {
+          alert(result.message || "Logout failed. Try again.");
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Server error. Please try again.");
+      }
+    }
+    </script>
 </StudentLayout>
