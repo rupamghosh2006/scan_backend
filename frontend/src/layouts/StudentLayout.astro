@@ -1,0 +1,22 @@
+---
+import "../styles/global.css";
+
+const { title = "Astro App" } = Astro.props;
+import StudentNav from "../components/StudentNav.astro";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <link rel="icon" type="image/*" href="/logo.png" />
+  </head>
+  <body class="bg-cyan-50 text-gray-800 min-h-screen flex flex-col">
+    <StudentNav />
+    <slot />
+  </body>
+</html>
