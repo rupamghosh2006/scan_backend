@@ -42,8 +42,8 @@ const registerStudent = asyncHandler( async(req, res) => {
     if(existedStudent){
         throw new ApiError(409, "Student with mobile no. already exists")
     }
-    console.log("verified value:", verified);
-
+    
+    let verified;
 
     // create student object - create entry in db
     const student = await Student.create(
