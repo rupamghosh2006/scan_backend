@@ -16,6 +16,12 @@ const Registert: React.FC = () => {
     confirmPassword: "",
   });
 
+  let config = {
+      headers: {
+        "Content-Type": "application/json", 
+    },
+  }
+
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,7 +31,7 @@ const Registert: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${API_BASE}/students/register`, form);
+      const res = await axios.post(`${API_BASE}/students/register`, form, config);
       alert(res.data.message);
       if (res.status === 200) window.location.href = "/login";
     } catch (err: any) {

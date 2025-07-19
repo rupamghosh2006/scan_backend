@@ -29,7 +29,6 @@ const registerStudent = asyncHandler( async(req, res) => {
     const { fullName, mobile, class_No, password, guardianName, guardianMobile } = req.body
 
     // validation - not empty
-
     if(
         [fullName, mobile, class_No, guardianName, password, guardianMobile].some((field) =>
         field?.trim() === "")
@@ -43,6 +42,8 @@ const registerStudent = asyncHandler( async(req, res) => {
     if(existedStudent){
         throw new ApiError(409, "Student with mobile no. already exists")
     }
+    console.log("verified value:", verified);
+
 
     // create student object - create entry in db
     const student = await Student.create(
@@ -52,7 +53,8 @@ const registerStudent = asyncHandler( async(req, res) => {
         class_No,
         password,
         guardianName,
-        guardianMobile
+        guardianMobile,
+        verified: false
         }
     )
 
