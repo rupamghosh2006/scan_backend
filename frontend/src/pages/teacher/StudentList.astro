@@ -1,0 +1,10 @@
+---
+import Navbar from "../../components/Navbar.astro";
+import Layout from "../../layouts/Layout.astro";
+import ManageStudents from "../../components/ManageStudents";
+---
+
+<Layout>
+  <Navbar />
+  <ManageStudents client:load />
+</Layout>
