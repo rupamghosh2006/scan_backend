@@ -33,7 +33,7 @@ const Registert: React.FC = () => {
     try {
       const res = await axios.post(`${API_BASE}/students/register`, form, config);
       alert(res.data.message);
-      if (res.status === 200) window.location.href = "/login";
+      if (res.status === 201) window.location.href = "/";
     } catch (err: any) {
       alert(err?.response?.data?.message || "Registration failed");
     }
