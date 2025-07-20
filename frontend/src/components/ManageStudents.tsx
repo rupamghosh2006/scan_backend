@@ -30,6 +30,9 @@ const ManageStudents: React.FC = () => {
   };
 
   const handleAccept = async (id: string) => {
+    const confAccept = window.confirm("Sure you want to accept this student?");
+    if (!confAccept) return;
+
     try {
       await axios.patch(`http://localhost:4000/api/v1/students/accept/${id}`, {}, {
         withCredentials: true,
@@ -41,15 +44,21 @@ const ManageStudents: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this?");
+    if (!confirmDelete) return;
+
     try {
       await axios.delete(`http://localhost:4000/api/v1/students/reject/${id}`, {
         withCredentials: true,
       });
+      alert("Student deleted successfully.");
       fetchStudents();
     } catch (err) {
       console.error("Error deleting student:", err);
+      alert("Failed to delete student.");
     }
   };
+
 
   useEffect(() => {
     fetchStudents();
