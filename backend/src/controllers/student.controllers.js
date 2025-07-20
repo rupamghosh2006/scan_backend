@@ -155,9 +155,14 @@ export {
 export const getAllStudents = async (req, res) => {
   try {
     const students = await Student.find();
+
+    const verified = students.filter((s) => s.verified === true);
+    const unverified = students.filter((s) => s.verified === false);
+
     res.status(200).json({
       success: true,
-      data: students,
+      verified,
+      unverified,
     });
   } catch (error) {
     res.status(500).json({
@@ -167,3 +172,93 @@ export const getAllStudents = async (req, res) => {
     });
   }
 };
+
+// Accept student (set verify to true)
+export const acceptStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+      id,
+      { verified: true }, // ✅ was verify
+      { new: true }
+    );
+
+    if (!updatedStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Student accepted and verified successfully",
+      data: updatedStudent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify student",
+      error: error.message,
+    });
+  }
+};
+
+
+// Reject student (delete)
+export const rejectStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedStudent = await Student.findByIdAndDelete(id);
+
+    if (!deletedStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Student rejected and deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete student",
+      error: error.message,
+    });
+  }
+};
+
+// Get only verified students
+export const getVerifiedStudents = async (req, res) => {
+  try {
+    const students = await Student.find({ verified: true }); // ✅ was verify
+    res.status(200).json({ success: true, data: students });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch verified students",
+      error: error.message,
+    });
+  }
+};
+
+
+// Get only pending (not verified) students
+export const getPendingStudents = async (req, res) => {
+  try {
+    const students = await Student.find({ verified: false }); // ✅ was verify
+    res.status(200).json({ success: true, data: students });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch pending students",
+      error: error.message,
+    });
+  }
+};
+

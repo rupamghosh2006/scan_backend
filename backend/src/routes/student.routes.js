@@ -1,17 +1,28 @@
 import { Router } from "express";
-import { registerStudent, loginStudent, logoutStudent, getAllStudents } from "../controllers/student.controllers.js";
+import {
+  registerStudent,
+  loginStudent,
+  logoutStudent,
+  getAllStudents,
+  acceptStudent,
+  rejectStudent,
+  getVerifiedStudents,
+  getPendingStudents
+} from "../controllers/student.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
-const router = Router()
+const router = Router();
 
-router.route("/register").post(registerStudent).get(getAllStudents);
+// Register and login
+router.route("/register").post(registerStudent);
 router.route("/login").post(loginStudent);
 
-// secured routes
+// Get all students - consider protecting with verifyJWT if needed
+router.route("/all").get(getAllStudents);
 
-router.route("/logout").post(verifyJWT, logoutStudent)
+// Secured routes
+router.route("/logout").post(verifyJWT, logoutStudent);
 
-// Additional secure routes
 router.route("/").get(verifyJWT, (req, res) => {
   res.json({
     message: "Welcome to the Dashboard",
@@ -26,5 +37,9 @@ router.route("/scan").get(verifyJWT, (req, res) => {
   });
 });
 
+router.route("/accept/:id").patch(verifyJWT, acceptStudent);
+router.route("/reject/:id").delete(verifyJWT, rejectStudent);
+router.route("/verified").get(verifyJWT, getVerifiedStudents);
+router.route("/pending").get(verifyJWT, getPendingStudents);
 
 export default router;
