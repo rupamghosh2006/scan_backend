@@ -37,11 +37,13 @@ const Login: React.FC = () => {
       >
         <h2 className="text-2xl font-bold text-center text-blue-600">Login</h2>
         <input
-          type="text"
+          type="tel"
           value={mobile}
           onChange={(e) => setMobile(e.target.value)}
-          placeholder="Mobile"
+          placeholder="Enter your mobile number"
           className="w-full p-2 border rounded"
+          minLength={10}
+          maxLength={10}
           required
         />
         <input

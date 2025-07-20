@@ -57,10 +57,12 @@ const Registert: React.FC = () => {
           onChange={handleChange}
         />
         <input
-          type="text"
+          type="tel"
           name="mobile"
           placeholder="Mobile"
           className="w-full p-2 border rounded"
+          minLength={10}
+          maxLength={10}
           required
           onChange={handleChange}
         />
@@ -81,10 +83,12 @@ const Registert: React.FC = () => {
           onChange={handleChange}
         />
         <input
-          type="text"
+          type="tel"
           name="guardianMobile"
           placeholder="Guardian Mobile"
           className="w-full p-2 border rounded"
+          minLength={10}
+          maxLength={10}
           required
           onChange={handleChange}
         />
@@ -93,6 +97,7 @@ const Registert: React.FC = () => {
           name="password"
           placeholder="Password"
           className="w-full p-2 border rounded"
+          minLength={6}
           required
           onChange={handleChange}
         />
