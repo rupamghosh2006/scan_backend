@@ -3,31 +3,68 @@ import axios from "axios";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
+interface Student {
+  _id: string;
+  fullName: string;
+  mobile: string;
+  class_No: string;
+  guardianName: string;
+  guardianMobile: string;
+  verified: boolean;
+}
+
 const Login: React.FC = () => {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    try {
-      const res = await axios.post(
-        `${API_BASE}/students/login`,
-        { mobile, password },
-        { withCredentials: true }
-      );
+  try {
+    // Step 1: Login
+    const res = await axios.post(
+      `${API_BASE}/students/login`,
+      { mobile, password },
+      { withCredentials: true }
+    );
 
-      localStorage.setItem("token", res.data?.data?.accessToken || "");
+    const token = res.data?.data?.accessToken || "";
+    localStorage.setItem("token", token);
 
-      if (mobile === "9876543210") {
-        window.location.href = "/teacher";
-      } else {
-        window.location.href = "/student";
-      }
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Login failed");
+    // Step 2: Fetch all students
+    const studentRes = await axios.get(`${API_BASE}/students/all`, {
+      withCredentials: true,
+    });
+
+    const allStudents = [
+      ...(studentRes.data?.verified || []),
+      ...(studentRes.data?.unverified || []),
+    ];
+
+    // Step 3: Find student by mobile
+    const student = allStudents.find((s: any) => s.mobile === mobile);
+
+    if (!student) {
+      alert("Student not found.");
+      return;
     }
-  };
+
+    if (!student.verified) {
+      alert("Student not verified. Please contact your teacher.");
+      return;
+    }
+
+    // Step 4: Redirect
+    if (mobile === "9876543210") {
+      window.location.href = "/teacher";
+    } else {
+      window.location.href = "/student";
+    }
+  } catch (err: any) {
+    alert(err?.response?.data?.message || "Login failed");
+  }
+};
+
 
   return (
     <div className="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -60,7 +97,12 @@ const Login: React.FC = () => {
         >
           Login
         </button>
-        <p className="text-center mt-4">Don't have an account? <a href="/register" className="text-blue-600 underline">Register here</a></p>
+        <p className="text-center mt-4">
+          Don't have an account?{" "}
+          <a href="/register" className="text-blue-600 underline">
+            Register here
+          </a>
+        </p>
       </form>
     </div>
   );
