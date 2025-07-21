@@ -31,6 +31,9 @@ const handleLogin = async (e: React.FormEvent) => {
     const token = res.data?.data?.accessToken || "";
     localStorage.setItem("token", token);
 
+    const role = res.data?.data?.role || "";
+    localStorage.setItem("role", role);
+
     // Step 2: Fetch all students
     const studentRes = await axios.get(`${API_BASE}/students/all`, {
       withCredentials: true,

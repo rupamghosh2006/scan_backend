@@ -15,6 +15,7 @@ const { title = "Math with S.D." } = Astro.props;
 
   <script is:inline>
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
 
   if (!token) {
     alert("Please login first.");
@@ -35,6 +36,17 @@ const { title = "Math with S.D." } = Astro.props;
       window.location.href = "/";
     });
   }
+
+  if (!role) {
+    alert("Please login first.");
+    window.location.href = "/";
+  } else if (role!=='teacher'){
+    alert("Unauthorized access!");
+    window.location.href = "/student";    
+  }
+
+  console.log(role);
+  
 </script>
   </head>
   <body class="bg-cyan-100 text-gray-800 min-h-screen flex flex-col">
