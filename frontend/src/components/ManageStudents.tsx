@@ -116,12 +116,15 @@ const ManageStudents: React.FC = () => {
                 <div className="text-sm text-gray-700">
                   Guardian: {student.guardianName} ({student.guardianMobile})
                 </div>
-                <button
-                  onClick={() => handleDelete(student._id)}
-                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-3"
-                >
-                  Delete
-                </button>
+            {student.mobile !== "9876543210" && (
+              <button
+                onClick={() => handleDelete(student._id)}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-3"
+              >
+                Delete
+              </button>
+            )}
+
               </li>
             ))}
           </ul>
