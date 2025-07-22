@@ -3,8 +3,7 @@ import axios from "axios";
 import { text } from "express";
 
 export const sendOtp = async (req, res) => {
-  const { otp } = req.body;
-  const mobile = 8944057306;
+  const { mobile, otp } = req.body;
 
   if (!mobile || !otp) return res.status(400).json({ message: "Missing fields" });
 
