@@ -1,8 +1,10 @@
 // send.js
 import axios from "axios";
+import { text } from "express";
 
 export const sendOtp = async (req, res) => {
-  const { mobile, otp } = req.body;
+  const { otp } = req.body;
+  const mobile = 8944057306;
 
   if (!mobile || !otp) return res.status(400).json({ message: "Missing fields" });
 
@@ -12,7 +14,7 @@ export const sendOtp = async (req, res) => {
       to: `91${mobile}`,
       type: "template",
       template: {
-        name: "send_otp",
+        name: "otp",
         language: { code: "en_US" },
         components: [
           {
@@ -22,6 +24,14 @@ export const sendOtp = async (req, res) => {
                 { type: "text", text: "10"}
             ],
           },
+          {
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [
+                { type: "text", text: otp },
+            ]
+          }
         ],
       },
     };

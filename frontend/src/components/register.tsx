@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
-import dotenv from "dotenv";
 
 const API_BASE = "http://localhost:4000/api/v1";
 
+// Client-side form validation
 const validateForm = (form: any) => {
   const errors: Record<string, string> = {};
 
@@ -30,7 +30,6 @@ const Registert: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [verified, setVerified] = useState(false);
 
@@ -40,42 +39,44 @@ const Registert: React.FC = () => {
     },
   };
 
+  // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
     setErrors({ ...errors, [name]: "" });
   };
 
+  // Generate 6-digit OTP
   const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-  const expirationTimestamp = new Date();
-  expirationTimestamp.setMinutes(
-    expirationTimestamp.getMinutes() + 10
-  );
-
-  const sendMessageURL = `https://graph.facebook.com/${process.env.META_API_V}/${process.env.WP_BUSINESS_NO}/messages`;
-  
+  // Call backend to send OTP
   const sendOtp = async () => {
-  const otp = generateOtp();
-  setGeneratedOtp(otp);
-  setShowOtpInput(true);
+    const otpCode = generateOtp();
+    setOtp(""); // Clear previous OTP input
+    setShowOtpInput(true);
 
-  try {
-    await axios.post(`${API_BASE}/otp/send`, { otp, mobile: form.mobile }, config);
-  } catch (err) {
-    alert("Failed to send OTP");
-  }
-};
-
-  const verifyOtp = () => {
-    if (otp === generatedOtp) {
-      setVerified(true);
-      setShowOtpInput(false);
-    } else {
-      alert("Incorrect OTP");
+    try {
+      await axios.post(`${API_BASE}/otp/send`, { otp: otpCode, mobile: form.mobile }, config);
+      sessionStorage.setItem("sentOtp", otpCode); // Store on client for matching
+    } catch (err) {
+      alert("Failed to send OTP");
     }
   };
 
+  // Verify OTP with backend
+  const verifyOtp = async () => {
+    try {
+      const res = await axios.post(`${API_BASE}/otp/check`, { mobile: form.mobile, otp }, config);
+      if (res.data.success) {
+        setVerified(true);
+        setShowOtpInput(false);
+      }
+    } catch (err) {
+      alert("Incorrect or expired OTP");
+    }
+  };
+
+  // Let user re-edit mobile number
   const handleEditRequest = () => {
     if (confirm("Edit verified mobile number?")) {
       setVerified(false);
@@ -83,11 +84,17 @@ const Registert: React.FC = () => {
     }
   };
 
+  // Submit form to register student
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length) {
       setErrors(validationErrors);
+      return;
+    }
+
+    if (!verified) {
+      alert("Please verify your mobile number before submitting.");
       return;
     }
 
@@ -109,10 +116,9 @@ const Registert: React.FC = () => {
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-4"
       >
-        <h2 className="text-2xl font-bold text-center text-blue-600">
-          Student Registration
-        </h2>
+        <h2 className="text-2xl font-bold text-center text-blue-600">Student Registration</h2>
 
+        {/* Full Name */}
         <div>
           <input
             type="text"
@@ -125,6 +131,7 @@ const Registert: React.FC = () => {
           {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
         </div>
 
+        {/* Mobile + OTP */}
         <div>
           <div className="flex items-center gap-2">
             <input
@@ -134,14 +141,14 @@ const Registert: React.FC = () => {
               value={form.mobile}
               onChange={handleChange}
               className={`${inputClass("mobile")} ${verified ? "border-green-500" : ""}`}
-              max={10}
+              maxLength={10}
               required
               disabled={verified}
             />
             {!verified && (
               <button
                 type="button"
-                className="bg-blue-500 text-white px-3 py-2 rounded shrink-0"
+                className="bg-blue-500 text-white px-3 py-2 rounded"
                 onClick={sendOtp}
               >
                 Send OTP
@@ -149,7 +156,8 @@ const Registert: React.FC = () => {
             )}
           </div>
 
-          {showOtpInput && (
+          {/* OTP input and verify */}
+          {showOtpInput && !verified && (
             <div className="mt-2 flex items-center gap-2">
               <input
                 type="text"
@@ -168,6 +176,7 @@ const Registert: React.FC = () => {
             </div>
           )}
 
+          {/* Verified Status */}
           {verified && (
             <div className="text-green-600 text-sm mt-1">
               ✅ Verified: {form.mobile}{" "}
@@ -180,22 +189,24 @@ const Registert: React.FC = () => {
               </button>
             </div>
           )}
+
           {errors.mobile && <p className="text-red-500 text-sm">{errors.mobile}</p>}
         </div>
 
+        {/* Class */}
         <div>
           <input
             type="number"
             name="class_No"
             placeholder="Class (11/12)"
             className={inputClass("class_No")}
-            max={2}
             required
             onChange={handleChange}
           />
           {errors.class_No && <p className="text-red-500 text-sm">{errors.class_No}</p>}
         </div>
 
+        {/* Guardian Name */}
         <div>
           <input
             type="text"
@@ -208,19 +219,21 @@ const Registert: React.FC = () => {
           {errors.guardianName && <p className="text-red-500 text-sm">{errors.guardianName}</p>}
         </div>
 
+        {/* Guardian Mobile */}
         <div>
           <input
             type="tel"
             name="guardianMobile"
             placeholder="Guardian Mobile"
             className={inputClass("guardianMobile")}
-            max={10}
+            maxLength={10}
             required
             onChange={handleChange}
           />
           {errors.guardianMobile && <p className="text-red-500 text-sm">{errors.guardianMobile}</p>}
         </div>
 
+        {/* Password */}
         <div>
           <input
             type="password"
@@ -233,6 +246,7 @@ const Registert: React.FC = () => {
           {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
         </div>
 
+        {/* Confirm Password */}
         <div>
           <input
             type="password"
@@ -247,6 +261,7 @@ const Registert: React.FC = () => {
           )}
         </div>
 
+        {/* Register Button */}
         <button
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
@@ -254,6 +269,7 @@ const Registert: React.FC = () => {
           Register
         </button>
 
+        {/* Login Redirect */}
         <p className="text-center mt-4">
           Already have an account?{" "}
           <a href="/" className="text-blue-600 underline">
