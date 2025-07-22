@@ -1,9 +1,14 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import Navbar from "../components/Navbar.astro";
+import "../styles/global.css"
 ---
-
-<Layout>
-    <Navbar />
-    <main class="center">Sorry the page doesn't exist. Please visit  the <a class="text-shadow-white" href="/">home page</a>.</main>
-</Layout>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="refresh" content="1;url=/" />
+        <link rel="icon" type="image/*" href="/logo.png" />
+        
+    </head>
+    <body>
+          <a class="center flex align-middle font-bold font-sans w-full justify-center py-10 text-4xl" href="/">Sorry the page doesn't exist. Please visit  the home page.</a>
+    </body>
+</html>
