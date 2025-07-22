@@ -48,6 +48,8 @@ export const sendOtp = async (req, res) => {
       }
     );
 
+    console.log(res.data);
+    
     res.status(200).json({ message: "OTP sent" });
   } catch (error) {
     console.error("OTP send error", error.response?.data || error);
