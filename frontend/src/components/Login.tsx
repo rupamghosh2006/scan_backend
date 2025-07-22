@@ -54,6 +54,22 @@ const handleLogin = async (e: React.FormEvent) => {
 
     if (!student.verified) {
       alert("Student not verified. Please contact your teacher.");
+      try {
+        const response = await fetch("http://localhost:4000/api/v1/students/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          localStorage.clear()
+          window.location.href = "/";
+        }
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Server error. Please try again.");
+      }
       return;
     }
 

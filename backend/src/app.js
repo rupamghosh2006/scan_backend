@@ -40,4 +40,8 @@ app.use("/api/v1/scan", questionRouter)
 import studentRouter from "./routes/student.routes.js"
 app.use("/api/v1/students", studentRouter)
 
+//otp
+import urouter from "./routes/otp.routes.js";
+app.use("/api/v1/otp", urouter)
+
 export {app}
