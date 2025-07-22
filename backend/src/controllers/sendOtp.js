@@ -1,6 +1,5 @@
 // send.js
 import axios from "axios";
-import { text } from "express";
 
 export const sendOtp = async (req, res) => {
   const { mobile, otp } = req.body;
