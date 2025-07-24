@@ -11,23 +11,46 @@ interface Test {
 
 const UpcomingTest = () => {
   const [tests, setTests] = useState<Test[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchUpcomingTests = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/v1/tests/11", {
-          credentials: "include", // Include cookie if backend uses sessions
+        const storedStudent = localStorage.getItem("student");
+        if (!storedStudent) {
+          setError("Student info not found in localStorage.");
+          return;
+        }
+
+        const student = JSON.parse(storedStudent);
+        const studentClass = student.class_No || student.class || student.class_no;
+
+        if (!studentClass) {
+          setError("Class number missing from student data.");
+          return;
+        }
+
+        const res = await fetch(`http://localhost:4000/api/v1/tests/${studentClass}`, {
+          credentials: "include",
         });
+
+        if (!res.ok) throw new Error("Failed to fetch test data");
+
         const data = await res.json();
-        console.log("Fetched upcoming tests:", data);
-        setTests(data); // Since response is an array
-      } catch (error) {
-        console.error("Failed to fetch upcoming tests:", error);
+        setTests(data);
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUpcomingTests();
   }, []);
+
+  if (loading) return <p className="text-yellow-700">Loading upcoming tests...</p>;
+  if (error) return <p className="text-red-600">{error}</p>;
 
   return (
     <div className="bg-yellow-100 border border-yellow-400 p-4 rounded-lg shadow-md mt-4">
