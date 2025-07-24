@@ -14,15 +14,15 @@ import { ClientRouter } from "astro:transitions";
       class={`font-medium ${currentPath === "/student/" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
     >Home</a>
 
-    <a 
+    <!-- <a 
       href="/student/scan2" 
       class={`font-medium ${currentPath === "/student/scan2" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
-    >Scan</a>
+    >Scan</a> -->
 
-    <a 
+    <!-- <a 
       href="/student/questionBank" 
       class={`font-medium ${currentPath === "/student/questionBank" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
-    >Q Bank</a>
+    >Q Bank</a> -->
 
 
     <a 
@@ -31,9 +31,14 @@ import { ClientRouter } from "astro:transitions";
     >Test</a>
 
     <a 
+      href="/student/results" 
+      class={`font-medium ${currentPath === "/student/results" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
+    >Results</a>
+
+    <!-- <a 
       href="/student/profile" 
       class={`font-medium ${currentPath === "/student/profile" ? "text-cyan-700 border-b-2 border-cyan-700 font-semibold" : "text-gray-600 hover:text-cyan-600"}`}
-    >Profile</a>
+    >Profile</a> -->
   </div>
 </nav>
 <ClientRouter />
