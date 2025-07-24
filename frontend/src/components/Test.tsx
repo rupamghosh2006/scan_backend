@@ -71,12 +71,35 @@ const TestForm: React.FC<TestFormProps> = ({ chapters = defaultChapters }) => {
     total_marks: totalMarks
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const output = generateOutput();
-    console.log('Test Configuration:', JSON.stringify(output, null, 2));
-    alert('Test configuration generated! Check console for JSON output.');
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const output = generateOutput();
+
+  try {
+    const response = await fetch("http://localhost:4000/api/v1/tests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(output),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong");
+    }
+
+    alert("Test configuration saved successfully!");
+    console.log("Saved test config:", data.test);
+
+    // Reset form state
+    setSelectedChapters([]);
+  } catch (err) {
+    console.error("Failed to submit test config:", err);
+    alert("Failed to submit test configuration. Check console.");
+  }
+};
 
   const currentChapters = selectedClass === 11 ? chapters.class11 : chapters.class12;
 
