@@ -104,11 +104,11 @@ const handleSubmit = async (e: React.FormEvent) => {
   const currentChapters = selectedClass === 11 ? chapters.class11 : chapters.class12;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen  py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Mathematics Test Generator</h1>
-          <p className="text-gray-600 text-lg">Create customized math tests for Class 11 & 12</p>
+          {/* <h1 className="text-4xl font-bold text-gray-800 mb-2">Mathematics Test Generator</h1>
+          <p className="text-gray-600 text-lg">Create customized math tests for Class 11 & 12</p> */}
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
