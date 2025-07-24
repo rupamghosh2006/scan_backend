@@ -71,21 +71,44 @@ const TestForm: React.FC<TestFormProps> = ({ chapters = defaultChapters }) => {
     total_marks: totalMarks
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const output = generateOutput();
-    console.log('Test Configuration:', JSON.stringify(output, null, 2));
-    alert('Test configuration generated! Check console for JSON output.');
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const output = generateOutput();
+
+  try {
+    const response = await fetch("http://localhost:4000/api/v1/tests", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(output),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Something went wrong");
+    }
+
+    alert("Test configuration saved successfully!");
+    console.log("Saved test config:", data.test);
+
+    // Reset form state
+    setSelectedChapters([]);
+  } catch (err) {
+    console.error("Failed to submit test config:", err);
+    alert("Failed to submit test configuration. Check console.");
+  }
+};
 
   const currentChapters = selectedClass === 11 ? chapters.class11 : chapters.class12;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen  py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Mathematics Test Generator</h1>
-          <p className="text-gray-600 text-lg">Create customized math tests for Class 11 & 12</p>
+          {/* <h1 className="text-4xl font-bold text-gray-800 mb-2">Mathematics Test Generator</h1>
+          <p className="text-gray-600 text-lg">Create customized math tests for Class 11 & 12</p> */}
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">

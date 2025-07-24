@@ -1,0 +1,12 @@
+---
+import StudentLayout from "../../layouts/StudentLayout.astro"
+import StudentTest from "../../components/StudentTest"
+---
+
+<StudentLayout>
+   <main class="flex flex-col items-center p-4 flex-1">
+    
+    <!-- <h1 class="flex align-middle justify-center font-bold">THIS IS STUDENTS TEST PAGE</h1> -->
+    <StudentTest client:load />
+   </main>
+</StudentLayout>

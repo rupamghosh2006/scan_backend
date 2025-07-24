@@ -57,6 +57,8 @@ const handleLogin = async (e: React.FormEvent) => {
       return;
     }
 
+    localStorage.setItem("student", JSON.stringify(student));
+    
     // Step 4: Redirect
     if (mobile === "9876543210") {
       window.location.href = "/teacher";

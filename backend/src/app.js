@@ -40,4 +40,9 @@ app.use("/api/v1/scan", questionRouter)
 import studentRouter from "./routes/student.routes.js"
 app.use("/api/v1/students", studentRouter)
 
+// test config route import
+
+import testConfigRoutes from "./routes/testConfig.routes.js"
+app.use("/api/v1/tests", testConfigRoutes)
+
 export {app}
