@@ -41,7 +41,11 @@ const StudentResult: React.FC = () => {
           ),
           axios.get("http://localhost:4000/api/v1/scan/questions"),
         ]);
-
+        if (respRes.data.mobile !== mobile) {
+            setSummary(null); // or a special flag like setNoData(true)
+            setLoading(false);
+            return;
+            }
         const resp = respRes.data.data[0]; // latest attempt
         const bank = bankRes.data.data;
 
@@ -161,6 +165,12 @@ const StudentResult: React.FC = () => {
                   item.selected !== item.correctAnswer && (
                     <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded">
                       –0.25 marks
+                    </span>
+                  )}
+                  {item.selected &&
+                  item.selected === item.correctAnswer && (
+                    <span className="px-2 py-0.5 bg-green-100 text-green-500 rounded">
+                      +1.00 marks
                     </span>
                   )}
               </div>
