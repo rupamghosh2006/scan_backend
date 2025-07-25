@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 interface Question {
   _id: string;
@@ -139,25 +140,66 @@ if (typeof window !== "undefined") {
     setAnswers(updated);
   };
 
-  const submitTest = () => {
-    if (intervalId) clearInterval(intervalId);
-    const result = questions.map((q, i) => ({
-      questionNumber: i + 1,
-      questionId: q._id,
-      selectedOption: answers[q._id] || null,
-    }));
-    // console.log("✅ Submitted:", JSON.stringify(result, null, 2));
-      const submissionData = {
-      mobile: studentMobile,
-      responses: result,
-    };
+  // const submitTest = () => {
+  //   if (intervalId) clearInterval(intervalId);
+  //   const result = questions.map((q, i) => ({
+  //     questionNumber: i + 1,
+  //     questionId: q._id,
+  //     selectedOption: answers[q._id] || null,
+  //   }));
+  //   // console.log("✅ Submitted:", JSON.stringify(result, null, 2));
+  //     const submissionData = {
+  //     mobile: studentMobile,
+  //     responses: result,
+  //   };
 
-    console.log("✅ Submitted:", JSON.stringify(submissionData, null, 2));
+  //   console.log("✅ Submitted:", JSON.stringify(submissionData, null, 2));
 
-    alert("Test submitted successfully!");
-    localStorage.removeItem("test_started");
-    window.location.href = "/student/results";
+  //   alert("Test submitted successfully!");
+  //   localStorage.removeItem("test_started");
+  //   window.location.href = "/student/results";
+  // };
+
+const submitTest = async () => {
+  if (intervalId) clearInterval(intervalId);
+
+  const result = questions.map((q, i) => ({
+    questionNumber: i + 1,
+    questionId: q._id,
+    selectedOption: answers[q._id] || null,
+  }));
+
+  const now = new Date();
+  const date = now.toISOString().split("T")[0];
+  const time = now.toTimeString().split(":").slice(0, 2).join(":");
+
+  const submissionData = {
+    mobile: studentMobile,  // Make sure this is filled from login or state
+    date,
+    time,
+    responses: result,
   };
+
+  try {
+    const res = await axios.post(
+      "http://localhost:4000/api/v1/testResponses",
+      submissionData
+    );
+
+    if (res.data.success) {
+      alert("✅ Test submitted successfully!");
+      localStorage.removeItem("test_started");
+      window.location.href = "/student/results";
+    } else {
+      alert("❌ Submission failed. Please try again.");
+    }
+  } catch (err) {
+    console.error("❌ Submission error:", err);
+    alert("❌ Something went wrong. Please try again.");
+  }
+};
+
+
 
   const timerDisplay = () => {
     const m = String(Math.floor(timeLeft / 60)).padStart(2, "0");

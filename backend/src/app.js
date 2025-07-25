@@ -45,4 +45,9 @@ app.use("/api/v1/students", studentRouter)
 import testConfigRoutes from "./routes/testConfig.routes.js"
 app.use("/api/v1/tests", testConfigRoutes)
 
+// test response route import
+import testResponseRoutes from "./routes/testResponse.routes.js";
+app.use("/api/v1/testResponses", testResponseRoutes);
+
+
 export {app}
