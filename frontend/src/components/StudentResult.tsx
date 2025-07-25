@@ -41,11 +41,23 @@ const StudentResult: React.FC = () => {
           ),
           axios.get("http://localhost:4000/api/v1/scan/questions"),
         ]);
-        if (respRes.data.mobile !== mobile) {
+        // console.log(respRes.data.data[0].mobile, mobile);
+        console.log(respRes.data.data, mobile);
+        
+        const exists = respRes.data.data.some((item: any) => item.mobile === mobile);
+
+          if (!exists) {
+            console.log("❌ Mobile not found!");
             setSummary(null); // or a special flag like setNoData(true)
             setLoading(false);
             return;
-            }
+          }
+
+        // if (respRes.data.data.mobile !== mobile) {
+        //     setSummary(null); // or a special flag like setNoData(true)
+        //     setLoading(false);
+        //     return;
+        //     }
         const resp = respRes.data.data[0]; // latest attempt
         const bank = bankRes.data.data;
 
