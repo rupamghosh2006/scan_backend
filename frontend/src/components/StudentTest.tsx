@@ -16,34 +16,93 @@ interface AnswerMap {
 
 const StudentTest: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [testStarted, setTestStarted] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [testStarted, setTestStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [startAllowed, setStartAllowed] = useState(false);
+  const [subject, setSubject] = useState("");
 
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
+ let classNo: number | undefined = undefined;
 
-  const fetchQuestions = async () => {
-    try {
-      const res = await fetch("http://localhost:4000/api/v1/scan/questions");
-      const json = await res.json();
-      if (json.success && json.data) {
-        setQuestions(json.data);
-        setTimeLeft(json.data.length * 5 * 60); // 5 minutes per question
-      }
-    } catch (err) {
-      console.error("Failed to fetch questions:", err);
+if (typeof window !== "undefined") {
+  const storedStudent = localStorage.getItem("student");
+  if (storedStudent) {
+    const student = JSON.parse(storedStudent);
+    const studentClass = student.class_No || student.class || student.class_no;
+    classNo = studentClass;
+  }
+}
+
+  // Shuffle utility
+  const shuffleArray = (arr: any[]) => {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
   };
 
+  // Load and apply test configuration
+  const loadTestConfig = async () => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/v1/tests/${classNo}`);
+      const [test] = await res.json();
+
+      if (!test) {
+        alert("No test scheduled for your class.");
+        window.location.href = "/students";
+        return;
+      }
+
+      const { chapters, total_marks, subject, time } = test;
+      setSubject(subject || "Math");
+
+      // Check if the current time allows starting the test
+      const now = new Date();
+      const testStart = new Date(`${test.date}T${time}`);
+      if (now >= testStart) {
+        setStartAllowed(true);
+      } else {
+        const delay = testStart.getTime() - now.getTime();
+        setTimeout(() => setStartAllowed(true), delay);
+      }
+
+      // Fetch and filter all questions
+      const qRes = await fetch("http://localhost:4000/api/v1/scan/questions");
+      const qJson = await qRes.json();
+      const validQuestions: Question[] = qJson.data.filter(
+        (q: Question) =>
+          q.class === classNo && chapters.includes(q.chapter)
+      );
+
+      // Distribute questions evenly
+      const perChapter = Math.floor(total_marks / chapters.length);
+      let selected: Question[] = [];
+
+      chapters.forEach((chapter: string) => {
+        const chapterQs = validQuestions.filter((q) => q.chapter === chapter);
+        shuffleArray(chapterQs);
+        selected.push(...chapterQs.slice(0, perChapter));
+      });
+
+      shuffleArray(selected);
+      setQuestions(selected);
+      setTimeLeft(total_marks * 60); // 1 minute per mark
+    } catch (err) {
+      console.error("❌ Error loading test config:", err);
+    }
+  };
+
+  // Handle test start
   const startTest = () => {
-    setQuestions((prev) =>
-    prev.map((q, i) => (i === 0 ? { ...q, visited: true } : q))
-  );
     setTestStarted(true);
+    localStorage.setItem("test_started", "true");
+
+    setQuestions((prev) =>
+      prev.map((q, i) => (i === 0 ? { ...q, visited: true } : q))
+    );
+
     const id = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -54,6 +113,7 @@ const StudentTest: React.FC = () => {
         return prev - 1;
       });
     }, 1000);
+
     setIntervalId(id);
   };
 
@@ -84,8 +144,9 @@ const StudentTest: React.FC = () => {
       questionId: q._id,
       selectedOption: answers[q._id] || null,
     }));
-    console.log("Submitted:", JSON.stringify(result, null, 2));
+    console.log("✅ Submitted:", JSON.stringify(result, null, 2));
     alert("Test submitted successfully!");
+    localStorage.removeItem("test_started");
     window.location.href = "/students/results";
   };
 
@@ -95,25 +156,42 @@ const StudentTest: React.FC = () => {
     return `${m}:${s}`;
   };
 
+  useEffect(() => {
+    loadTestConfig();
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  const handleBeforeUnload = () => {
+    if (testStarted) {
+      submitTest();
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
       {!testStarted ? (
         <div className="bg-white p-6 rounded shadow text-center">
           <h2 className="text-xl font-semibold mb-4">Test Details</h2>
           <p className="mb-1">
-            <strong>Subject:</strong> {questions[0]?.subject || "Math"}
+            <strong>Subject:</strong> {subject}
           </p>
           <p className="mb-1">
             <strong>Total Questions:</strong> {questions.length}
           </p>
           <p className="mb-1">
-            <strong>Total Time:</strong> {Math.ceil(questions.length * 5)} minutes
+            <strong>Total Time:</strong> {Math.ceil(timeLeft / 60)} minutes
           </p>
           <button
             onClick={startTest}
-            className="mt-4 bg-cyan-600 text-white px-6 py-2 rounded hover:bg-cyan-700"
+            disabled={!startAllowed}
+            className={`mt-4 px-6 py-2 rounded text-white ${
+              startAllowed
+                ? "bg-cyan-600 hover:bg-cyan-700"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
-            Start Test
+            {startAllowed ? "Start Test" : "Wait for Start Time"}
           </button>
         </div>
       ) : (
@@ -132,10 +210,10 @@ const StudentTest: React.FC = () => {
 
           <div className="bg-white p-6 rounded shadow space-y-4">
             <div className="font-medium text-lg">
-             {questions[currentIndex].question}
+              {questions[currentIndex]?.question}
             </div>
             <div className="space-y-2">
-              {questions[currentIndex].options.map((opt, idx) => (
+              {questions[currentIndex]?.options.map((opt, idx) => (
                 <label key={idx} className="block">
                   <input
                     type="radio"
@@ -143,7 +221,9 @@ const StudentTest: React.FC = () => {
                     value={opt}
                     className="mr-2"
                     checked={answers[questions[currentIndex]._id] === opt}
-                    onChange={() => handleAnswer(questions[currentIndex]._id, opt)}
+                    onChange={() =>
+                      handleAnswer(questions[currentIndex]._id, opt)
+                    }
                   />
                   {opt}
                 </label>
@@ -151,13 +231,18 @@ const StudentTest: React.FC = () => {
             </div>
             <div className="flex justify-between pt-4">
               <button
-                onClick={() => currentIndex > 0 && showQuestion(currentIndex - 1)}
+                onClick={() =>
+                  currentIndex > 0 && showQuestion(currentIndex - 1)
+                }
                 className="bg-gray-300 px-4 py-2 rounded"
               >
                 Previous
               </button>
               <button
-                onClick={() => currentIndex < questions.length - 1 && showQuestion(currentIndex + 1)}
+                onClick={() =>
+                  currentIndex < questions.length - 1 &&
+                  showQuestion(currentIndex + 1)
+                }
                 className="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700"
               >
                 Next
@@ -174,8 +259,7 @@ const StudentTest: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-5 gap-2 mt-6 p-4 bg-white shadow rounded text-sm">
-            {questions.map((_, i) => {
-              const q = questions[i];
+            {questions.map((q, i) => {
               const isAnswered = answers[q._id];
               return (
                 <button
