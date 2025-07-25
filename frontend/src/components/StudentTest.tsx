@@ -156,7 +156,7 @@ if (typeof window !== "undefined") {
 
     alert("Test submitted successfully!");
     localStorage.removeItem("test_started");
-    window.location.href = "/students/results";
+    window.location.href = "/student/results";
   };
 
   const timerDisplay = () => {
