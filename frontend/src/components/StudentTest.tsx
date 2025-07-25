@@ -25,12 +25,14 @@ const StudentTest: React.FC = () => {
   const [subject, setSubject] = useState("");
 
  let classNo: number | undefined = undefined;
+ let studentMobile: string | undefined = undefined;
 
 if (typeof window !== "undefined") {
   const storedStudent = localStorage.getItem("student");
   if (storedStudent) {
     const student = JSON.parse(storedStudent);
     const studentClass = student.class_No || student.class || student.class_no;
+    studentMobile = student.mobile || student.phone || student.mobile_number;
     classNo = studentClass;
   }
 }
@@ -144,7 +146,14 @@ if (typeof window !== "undefined") {
       questionId: q._id,
       selectedOption: answers[q._id] || null,
     }));
-    console.log("✅ Submitted:", JSON.stringify(result, null, 2));
+    // console.log("✅ Submitted:", JSON.stringify(result, null, 2));
+      const submissionData = {
+      mobile: studentMobile,
+      responses: result,
+    };
+
+    console.log("✅ Submitted:", JSON.stringify(submissionData, null, 2));
+
     alert("Test submitted successfully!");
     localStorage.removeItem("test_started");
     window.location.href = "/students/results";
