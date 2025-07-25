@@ -134,10 +134,7 @@ const StudentResult: React.FC = () => {
 
                   let classes =
                     "block p-3 rounded-md border text-sm transition";
-                  if (item.selected === null && isCorrect) {
-                    classes +=
-                      " bg-green-50 text-green-700 border-green-400";
-                  } else if (chosen && isCorrect) {
+                  if (isCorrect) {
                     classes +=
                       " bg-green-50 text-green-700 border-green-400";
                   } else if (chosen && !isCorrect) {
