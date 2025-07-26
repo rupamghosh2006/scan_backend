@@ -140,7 +140,7 @@ const StudentResult: React.FC = () => {
         }
 
         // Get latest submission
-        const resp = respRes.data.data[0];
+        const resp = respRes.data.data.find((item: any) => item.mobile === mobile);
         const bank = bankRes.data.data;
 
         let correct = 0, wrong = 0, unattempted = 0;
