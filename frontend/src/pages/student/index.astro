@@ -28,6 +28,7 @@ import UpcomingTest from "../../components/UpcomingTest"
         if (response.ok) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          localStorage.clear();
           alert(result.message || "Logged out!");
           window.location.href = "/";
         } else {
