@@ -56,6 +56,7 @@ import Navbar from "../../components/Navbar.astro";
         if (response.ok) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          localStorage.clear();
           alert("Teacher Logged out!");
           window.location.href = "/";
         } else {
