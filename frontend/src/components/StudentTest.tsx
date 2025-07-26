@@ -214,6 +214,12 @@ const submitTest = async () => {
 };
 
 
+const autoSubmit = async () => {
+    const timeNow = new Date().toTimeString().split(":").slice(0, 2).join(":");
+    console.log(time);
+    console.log(timeLeft);
+    console.log(timeNow);        
+    }
 
   const timerDisplay = () => {
     const m = String(Math.floor(timeLeft / 60)).padStart(2, "0");
