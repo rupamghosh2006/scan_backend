@@ -24,21 +24,21 @@ const StudentTest: React.FC = () => {
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [startAllowed, setStartAllowed] = useState(false);
   const [subject, setSubject] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
- let classNo: number | undefined = undefined;
- let studentMobile: string | undefined = undefined;
+  let classNo: number | undefined = undefined;
+  let studentMobile: string | undefined = undefined;
 
-if (typeof window !== "undefined") {
-  const storedStudent = localStorage.getItem("student");
-  if (storedStudent) {
-    const student = JSON.parse(storedStudent);
-    const studentClass = student.class_No || student.class || student.class_no;
-    studentMobile = student.mobile || student.phone || student.mobile_number;
-    classNo = studentClass;
+  if (typeof window !== "undefined") {
+    const storedStudent = localStorage.getItem("student");
+    if (storedStudent) {
+      const student = JSON.parse(storedStudent);
+      const studentClass = student.class_No || student.class || student.class_no;
+      studentMobile = student.mobile || student.phone || student.mobile_number;
+      classNo = studentClass;
+    }
   }
-}
 
-  // Shuffle utility
   const shuffleArray = (arr: any[]) => {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -46,7 +46,6 @@ if (typeof window !== "undefined") {
     }
   };
 
-  // Load and apply test configuration
   const loadTestConfig = async () => {
     try {
       const res = await fetch(`http://localhost:4000/api/v1/tests/${classNo}`);
@@ -61,7 +60,6 @@ if (typeof window !== "undefined") {
       const { chapters, total_marks, subject, time } = test;
       setSubject(subject || "Math");
 
-      // Check if the current time allows starting the test
       const now = new Date();
       const testStart = new Date(`${test.date}T${time}`);
       if (now >= testStart) {
@@ -71,7 +69,6 @@ if (typeof window !== "undefined") {
         setTimeout(() => setStartAllowed(true), delay);
       }
 
-      // Fetch and filter all questions
       const qRes = await fetch("http://localhost:4000/api/v1/scan/questions");
       const qJson = await qRes.json();
       const validQuestions: Question[] = qJson.data.filter(
@@ -79,7 +76,6 @@ if (typeof window !== "undefined") {
           q.class === classNo && chapters.includes(q.chapter)
       );
 
-      // Distribute questions evenly
       const perChapter = Math.floor(total_marks / chapters.length);
       let selected: Question[] = [];
 
@@ -91,13 +87,12 @@ if (typeof window !== "undefined") {
 
       shuffleArray(selected);
       setQuestions(selected);
-      setTimeLeft(total_marks * 60); // 1 minute per mark
+      setTimeLeft(total_marks * 60);
     } catch (err) {
       console.error("❌ Error loading test config:", err);
     }
   };
 
-  // Handle test start
   const startTest = () => {
     setTestStarted(true);
     localStorage.setItem("test_started", "true");
@@ -120,6 +115,54 @@ if (typeof window !== "undefined") {
     setIntervalId(id);
   };
 
+  const submitTest = async () => {
+    if (submitted) return;
+    setSubmitted(true);
+    if (intervalId) clearInterval(intervalId);
+
+    const result = questions.map((q, i) => ({
+      questionNumber: i + 1,
+      questionId: q._id,
+      selectedOption: answers[q._id] || null,
+    }));
+
+    const now = new Date();
+    const date = now.toISOString().split("T")[0];
+    const time = now.toTimeString().split(":").slice(0, 2).join(":");
+
+    const submissionData = {
+      mobile: studentMobile,
+      date,
+      time,
+      responses: result,
+    };
+
+    try {
+      const res = await axios.post(
+        "http://localhost:4000/api/v1/testResponses",
+        submissionData
+      );
+
+      if (res.data.success) {
+        alert("✅ Test submitted successfully!");
+        localStorage.removeItem("test_started");
+        localStorage.setItem("test_submitted", "true"); // ✅ block retake
+        window.location.href = "/student/results";
+      } else {
+        alert("❌ Submission failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("❌ Submission error:", err);
+      alert("❌ Something went wrong. Please try again.");
+    }
+  };
+
+  const timerDisplay = () => {
+    const m = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+    const s = String(timeLeft % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   const showQuestion = (index: number) => {
     setCurrentIndex(index);
     setQuestions((prev) => {
@@ -140,110 +183,56 @@ if (typeof window !== "undefined") {
     setAnswers(updated);
   };
 
-  // const submitTest = () => {
-  //   if (intervalId) clearInterval(intervalId);
-  //   const result = questions.map((q, i) => ({
-  //     questionNumber: i + 1,
-  //     questionId: q._id,
-  //     selectedOption: answers[q._id] || null,
-  //   }));
-  //   // console.log("✅ Submitted:", JSON.stringify(result, null, 2));
-  //     const submissionData = {
-  //     mobile: studentMobile,
-  //     responses: result,
-  //   };
-
-  //   console.log("✅ Submitted:", JSON.stringify(submissionData, null, 2));
-
-  //   alert("Test submitted successfully!");
-  //   localStorage.removeItem("test_started");
-  //   window.location.href = "/student/results";
-  // };
-
-const submitTest = async () => {
-  if (intervalId) clearInterval(intervalId);
-
-  const result = questions.map((q, i) => ({
-    questionNumber: i + 1,
-    questionId: q._id,
-    selectedOption: answers[q._id] || null,
-  }));
-
-  const now = new Date();
-  const date = now.toISOString().split("T")[0];
-  const time = now.toTimeString().split(":").slice(0, 2).join(":");
-
-  const submissionData = {
-    mobile: studentMobile,  // Make sure this is filled from login or state
-    date,
-    time,
-    responses: result,
-  };
-
-  try {
-    const res = await axios.post(
-      "http://localhost:4000/api/v1/testResponses",
-      submissionData
-    );
-
-    if (res.data.success) {
-      alert("✅ Test submitted successfully!");
-      localStorage.removeItem("test_started");
-      window.location.href = "/student/results";
-    } else {
-      alert("❌ Submission failed. Please try again.");
-    }
-  } catch (err) {
-    console.error("❌ Submission error:", err);
-    alert("❌ Something went wrong. Please try again.");
-  }
-};
-
-
-
-  const timerDisplay = () => {
-    const m = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-    const s = String(timeLeft % 60).padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
-  useEffect(() => {
-    loadTestConfig();
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
   const handleBeforeUnload = () => {
     if (testStarted) {
       submitTest();
     }
   };
 
+  useEffect(() => {
+    const alreadySubmitted = localStorage.getItem("test_submitted") === "true";
+    setSubmitted(alreadySubmitted);
+
+    loadTestConfig();
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
       {!testStarted ? (
-        <div className="bg-white p-6 rounded shadow text-center">
-          <h2 className="text-xl font-semibold mb-4">Test Details</h2>
-          <p className="mb-1">
-            <strong>Subject:</strong> {subject}
-          </p>
-          <p className="mb-1">
-            <strong>Total Questions:</strong> {questions.length}
-          </p>
-          <p className="mb-1">
-            <strong>Total Time:</strong> {Math.ceil(timeLeft / 60)} minutes
-          </p>
-          <button
-            onClick={startTest}
-            disabled={!startAllowed}
-            className={`mt-4 px-6 py-2 rounded text-white ${
-              startAllowed
-                ? "bg-cyan-600 hover:bg-cyan-700"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {startAllowed ? "Start Test" : "Wait for Start Time"}
-          </button>
+        submitted ? (
+          <div className="text-center text-green-600 text-xl font-semibold mt-10">
+            ✅ You have already submitted the test.
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded shadow text-center">
+            <h2 className="text-xl font-semibold mb-4">Test Details</h2>
+            <p className="mb-1">
+              <strong>Subject:</strong> {subject}
+            </p>
+            <p className="mb-1">
+              <strong>Total Questions:</strong> {questions.length}
+            </p>
+            <p className="mb-1">
+              <strong>Total Time:</strong> {Math.ceil(timeLeft / 60)} minutes
+            </p>
+            <button
+              onClick={startTest}
+              disabled={!startAllowed}
+              className={`mt-4 px-6 py-2 rounded text-white ${
+                startAllowed
+                  ? "bg-cyan-600 hover:bg-cyan-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {startAllowed ? "Start Test" : "Wait for Start Time"}
+            </button>
+          </div>
+        )
+      ) : submitted ? (
+        <div className="text-center text-green-600 text-xl font-semibold mt-10">
+          ✅ Test has been submitted successfully!
         </div>
       ) : (
         <>
@@ -253,9 +242,10 @@ const submitTest = async () => {
             </span>
             <button
               onClick={submitTest}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-60"
+              disabled={submitted}
             >
-              Submit Test
+              {submitted ? "Submitting..." : "Submit Test"}
             </button>
           </div>
 
