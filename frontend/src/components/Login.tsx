@@ -54,6 +54,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
     if (!student.verified) {
       alert("Student not verified. Please contact your teacher.");
+      localStorage.clear();
       return;
     }
 
