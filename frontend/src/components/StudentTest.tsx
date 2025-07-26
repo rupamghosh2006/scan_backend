@@ -25,7 +25,6 @@ const StudentTest: React.FC = () => {
   const [startAllowed, setStartAllowed] = useState(false);
   const [subject, setSubject] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [testId, setTestId] = useState<string>("");
 
   let classNo: number | undefined = undefined;
   let studentMobile: string | undefined = undefined;
@@ -57,10 +56,6 @@ const StudentTest: React.FC = () => {
         window.location.href = "/students";
         return;
       }
-
-      setTestId(test._id);
-      const alreadySubmitted = localStorage.getItem(`test_submitted_${test._id}`) === "true";
-      setSubmitted(alreadySubmitted);
 
       const { chapters, total_marks, subject, time } = test;
       setSubject(subject || "Math");
@@ -151,7 +146,7 @@ const StudentTest: React.FC = () => {
       if (res.data.success) {
         alert("✅ Test submitted successfully!");
         localStorage.removeItem("test_started");
-        localStorage.setItem(`test_submitted_${testId}`, "true"); // ✅ unique ID based
+        localStorage.setItem("test_submitted", "true"); // ✅ block retake
         window.location.href = "/student/results";
       } else {
         alert("❌ Submission failed. Please try again.");
@@ -195,6 +190,9 @@ const StudentTest: React.FC = () => {
   };
 
   useEffect(() => {
+    const alreadySubmitted = localStorage.getItem("test_submitted") === "true";
+    setSubmitted(alreadySubmitted);
+
     loadTestConfig();
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
