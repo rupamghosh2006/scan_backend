@@ -49,5 +49,8 @@ app.use("/api/v1/tests", testConfigRoutes)
 import testResponseRoutes from "./routes/testResponse.routes.js";
 app.use("/api/v1/testResponses", testResponseRoutes);
 
+import tick from "./routes/tick.route.js"
+app.use("/api/v1/tick", tick)
+
 
 export {app}

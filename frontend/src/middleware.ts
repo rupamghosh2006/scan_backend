@@ -35,11 +35,17 @@ const class12MathChapters = [
   "Probability"
 ];
 
-export const onRequest = defineMiddleware((context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.chapters = {
     class11: class11MathChapters,
     class12: class12MathChapters,
   };
+
+  const res = await fetch("http://localhost:4000/api/v1/tick");
+  const data = await res.json();
+
+  context.locals.serverTime = data.time;
+
   return next();
 });
 
