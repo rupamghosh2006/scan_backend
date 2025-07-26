@@ -8,6 +8,11 @@ interface FormData {
   total_marks: number;
 }
 
+interface Question {
+  chapter: string;
+  class: number;
+}
+
 interface TestFormProps {
   chapters?: {
     class11: string[];
@@ -38,11 +43,31 @@ const TestForm: React.FC<TestFormProps> = ({ chapters = defaultChapters }) => {
   const [totalMarks, setTotalMarks] = useState<number>(100);
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
+  const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const now = new Date();
     setDate(now.toISOString().split('T')[0]);
     setTime(now.toTimeString().split(':').slice(0, 2).join(':'));
+
+    const fetchQuestionCounts = async () => {
+      try {
+        const res = await fetch("http://localhost:4000/api/v1/scan/questions");
+        const json = await res.json();
+        if (json.success) {
+          const counts: Record<string, number> = {};
+          json.data.forEach((q: Question) => {
+            const key = `${q.class}-${q.chapter}`;
+            counts[key] = (counts[key] || 0) + 1;
+          });
+          setQuestionCounts(counts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch questions:", error);
+      }
+    };
+
+    fetchQuestionCounts();
   }, []);
 
   const handleClassChange = (classNo: number) => {
@@ -71,50 +96,42 @@ const TestForm: React.FC<TestFormProps> = ({ chapters = defaultChapters }) => {
     total_marks: totalMarks
   });
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const output = generateOutput();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const output = generateOutput();
 
-  try {
-    const response = await fetch("http://localhost:4000/api/v1/tests", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(output),
-    });
+    try {
+      const response = await fetch("http://localhost:4000/api/v1/tests", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+         },
+        body: JSON.stringify(output),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || "Something went wrong");
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      alert("Test configuration saved successfully!");
+      console.log("Saved test config:", data.test);
+      // Reset form state
+      setSelectedChapters([]);
+    } catch (err) {
+      console.error("Failed to submit test config:", err);
+      alert("Failed to submit test configuration. Check console.");
     }
-
-    alert("Test configuration saved successfully!");
-    console.log("Saved test config:", data.test);
-
-    // Reset form state
-    setSelectedChapters([]);
-  } catch (err) {
-    console.error("Failed to submit test config:", err);
-    alert("Failed to submit test configuration. Check console.");
-  }
-};
+  };
 
   const currentChapters = selectedClass === 11 ? chapters.class11 : chapters.class12;
 
   return (
-    <div className="min-h-screen  py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          {/* <h1 className="text-4xl font-bold text-gray-800 mb-2">Mathematics Test Generator</h1>
-          <p className="text-gray-600 text-lg">Create customized math tests for Class 11 & 12</p> */}
-        </div>
-
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <form onSubmit={handleSubmit} className="p-8">
-
-            {/* Date and Time Inputs */}
             <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-lg font-medium text-gray-700 mb-2">Date</label>
@@ -138,7 +155,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </div>
 
-            {/* Class Selection */}
             <div className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Select Class</h2>
               <div className="flex gap-4">
@@ -159,7 +175,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </div>
 
-            {/* Total Marks */}
             <div className="mb-8">
               <label htmlFor="totalMarks" className="block text-lg font-medium text-gray-700 mb-3">
                 Total Marks
@@ -176,7 +191,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               />
             </div>
 
-            {/* Chapter Selection */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-semibold text-gray-800">
@@ -201,24 +215,30 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {currentChapters.map((chapter) => (
-                  <label
-                    key={chapter}
-                    className={`flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                      selectedChapters.includes(chapter)
-                        ? 'border-blue-500 bg-blue-50 text-blue-800'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedChapters.includes(chapter)}
-                      onChange={() => handleChapterToggle(chapter)}
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3"
-                    />
-                    <span className="font-medium">{chapter}</span>
-                  </label>
-                ))}
+                {currentChapters.map((chapter) => {
+                  const count = questionCounts[`${selectedClass}-${chapter}`] || 0;
+                  return (
+                    <label
+                      key={chapter}
+                      className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                        selectedChapters.includes(chapter)
+                          ? 'border-blue-500 bg-blue-50 text-blue-800'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedChapters.includes(chapter)}
+                          onChange={() => handleChapterToggle(chapter)}
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mr-3"
+                        />
+                        <span className="font-medium">{chapter}</span>
+                      </div>
+                      <span className="text-sm text-gray-500 ml-4">({count})</span>
+                    </label>
+                  );
+                })}
               </div>
 
               {selectedChapters.length > 0 && (
@@ -230,7 +250,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               )}
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-4 justify-center">
               <button
                 type="submit"
