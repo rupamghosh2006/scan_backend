@@ -1,12 +1,13 @@
 ---
 import StudentLayout from "../../layouts/StudentLayout.astro"
 import StudentTest from "../../components/StudentTest"
+const time = Astro.locals.serverTime
 ---
 
 <StudentLayout>
    <main class="flex flex-col items-center p-4 flex-1">
     
     <!-- <h1 class="flex align-middle justify-center font-bold">THIS IS STUDENTS TEST PAGE</h1> -->
-    <StudentTest client:load />
+    <StudentTest serverTime={time}client:load />
    </main>
 </StudentLayout>

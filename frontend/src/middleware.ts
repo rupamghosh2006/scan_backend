@@ -44,7 +44,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const res = await fetch("http://localhost:4000/api/v1/tick");
   const data = await res.json();
 
-  context.locals.serverTime = new Date(data.time).toUTCString();
+  context.locals.serverTime = data.time //new Date(data.time).toUTCString();
 
   return next();
 });
