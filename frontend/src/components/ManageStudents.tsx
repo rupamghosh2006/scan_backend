@@ -103,33 +103,32 @@ const ManageStudents: React.FC = () => {
 
       {/* Verified Students */}
       <div>
-        <h2 className="text-3xl font-bold text-green-600 mb-4">Verified Students</h2>
-        {verifiedStudents.length === 0 ? (
-          <p className="text-gray-500">No verified students.</p>
-        ) : (
-          <ul className="space-y-4">
-            {verifiedStudents.map((student) => (
-              <li key={student._id} className="bg-green-50 border border-green-300 p-4 rounded-lg shadow">
-                <div className="font-semibold text-lg text-green-800">{student.fullName}</div>
-                <div className="text-sm text-gray-700">Mobile: {student.mobile}</div>
-                <div className="text-sm text-gray-700">Class: {student.class_No}</div>
-                <div className="text-sm text-gray-700">
-                  Guardian: {student.guardianName} ({student.guardianMobile})
-                </div>
-            {student.mobile !== "9876543210" && (
-              <button
-                onClick={() => handleDelete(student._id)}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-3"
-              >
-                Delete
-              </button>
-            )}
-
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+  <h2 className="text-3xl font-bold text-green-600 mb-4">Verified Students</h2>
+  {verifiedStudents.length === 0 ? (
+    <p className="text-gray-500">No verified students.</p>
+  ) : (
+    <ul className="space-y-4">
+      {verifiedStudents
+        .filter((student) => student.mobile !== "9876543210")
+        .map((student) => (
+          <li key={student._id} className="bg-green-50 border border-green-300 p-4 rounded-lg shadow">
+            <div className="font-semibold text-lg text-green-800">{student.fullName}</div>
+            <div className="text-sm text-gray-700">Mobile: {student.mobile}</div>
+            <div className="text-sm text-gray-700">Class: {student.class_No}</div>
+            <div className="text-sm text-gray-700">
+              Guardian: {student.guardianName} ({student.guardianMobile})
+            </div>
+            <button
+              onClick={() => handleDelete(student._id)}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mt-3"
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+    </ul>
+  )}
+</div>
     </div>
   );
 };
