@@ -132,7 +132,7 @@ const logoutStudent = asyncHandler( async(req, res) => {
         req.student._id,
         {
             $set: {
-                refreshToken: undefined
+                refreshToken: null
             }
         },
         {
