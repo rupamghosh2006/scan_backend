@@ -14,30 +14,13 @@ interface Question {
 }
 
 interface TestFormProps {
-  chapters?: {
+  chapters: {
     class11: string[];
     class12: string[];
   };
 }
 
-const defaultChapters = {
-  class11: [
-    "Sets", "Relations and Functions", "Trigonometric Functions",
-    "Principle of Mathematical Induction", "Complex Numbers and Quadratic Equations",
-    "Linear Inequalities", "Permutations and Combinations", "Binomial Theorem",
-    "Sequences and Series", "Straight Lines", "Conic Sections",
-    "Introduction to Three Dimensional Geometry", "Limits and Derivatives",
-    "Mathematical Reasoning", "Statistics", "Probability"
-  ],
-  class12: [
-    "Relations and Functions", "Inverse Trigonometric Functions", "Matrices",
-    "Determinants", "Continuity and Differentiability", "Applications of Derivatives",
-    "Integrals", "Applications of Integrals", "Differential Equations", "Vectors",
-    "Three Dimensional Geometry", "Linear Programming", "Probability"
-  ]
-};
-
-const TestForm: React.FC<TestFormProps> = ({ chapters = defaultChapters }) => {
+const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
   const [selectedClass, setSelectedClass] = useState<number>(11);
   const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
   const [totalMarks, setTotalMarks] = useState<number>(100);
