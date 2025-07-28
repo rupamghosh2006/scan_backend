@@ -27,6 +27,7 @@ const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
+  const [highestMark, setHeighestMark] = useState<string>('')
 
   useEffect(() => {
     const now = new Date();
@@ -37,6 +38,7 @@ const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
       try {
         const res = await fetch("http://localhost:4000/api/v1/scan/questions");
         const json = await res.json();
+        
         if (json.success) {
           const counts: Record<string, number> = {};
           json.data.forEach((q: Question) => {
@@ -44,7 +46,8 @@ const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
             counts[key] = (counts[key] || 0) + 1;
           });
           setQuestionCounts(counts);
-        }
+        }        
+
       } catch (error) {
         console.error("Failed to fetch questions:", error);
       }
@@ -108,6 +111,11 @@ const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
     }
   };
 
+  useEffect(() => {
+    setHeighestMark("100")
+  },[selectedChapters])
+
+
   const currentChapters = selectedClass === 11 ? chapters.class11 : chapters.class12;
 
   return (
@@ -166,9 +174,9 @@ const TestForm: React.FC<TestFormProps> = ({ chapters }) => {
                 type="number"
                 id="totalMarks"
                 value={totalMarks}
-                onChange={(e) => setTotalMarks(Number(e.target.value))}
+                onChange={(e) => setTotalMarks(Number(e.target.value))} //FIX THIS PART
                 min="1"
-                max="200"
+                max={highestMark}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter total marks"
               />
