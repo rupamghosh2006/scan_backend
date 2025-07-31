@@ -18,8 +18,13 @@ const testResponseSchema = new Schema({
   mobile: {
     type: String,
     required: true,
-    unique: true,
+    //unique: true,
   },
+  testId: {
+      type: Schema.Types.ObjectId,
+      ref: "TestConfig",  
+      required: true,
+    },
   responses: {
     type: [responseSchema],
     required: true,
