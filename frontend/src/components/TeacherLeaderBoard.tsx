@@ -216,97 +216,146 @@ const TeachersDashboardLeaderboard: React.FC = () => {
     );
   }
 
- const exportLeaderboardAsPDF = (
-    entries: LeaderboardEntry[],
-    classNo: number
-  ) => {
-    const doc = new jsPDF();
+  //PDF EXPORT FUNCTION
+const exportLeaderboardAsPDF = (
+  entries: LeaderboardEntry[],
+  classNo: number,
+  testDate?: string,
+  chapters?: string[]
+) => {
+  const doc = new jsPDF();
+  
+  // Get a random quote
+  const randomQuote = getRandomQuote();
+  
+  // Header section with quote and test info
+  let currentY = 20;
+  
+  // Quote
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(60, 60, 60);
+  const quoteLine = `"${randomQuote}"`;
+  doc.text(quoteLine, 105, currentY, { align: 'center' });
+  currentY += 10;
+  
+  // Title
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Class ${classNo} Leaderboard`, 105, currentY, { align: 'center' });
+  currentY += 8;
+  
+  // Test date and chapters (if available)
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  
+  if (testDate) {
+    doc.text(`Test Date: ${testDate}`, 105, currentY, { align: 'center' });
+    currentY += 5;
+  }
+  
+  if (chapters && chapters.length > 0) {
+    const chaptersText = `Chapters: ${chapters.join(', ')}`;
+    doc.text(chaptersText, 105, currentY, { align: 'center' });
+    currentY += 5;
+  }
+  
+  currentY += 10; // Extra space before table
+  
+  // Table setup
+  const startY = currentY;
+  const rowHeight = 12;
+  const colWidths = [25, 60, 35, 35]; // Rank, Name, Score, Time Taken
+  const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+  const startX = (210 - tableWidth) / 2; // Center the table (A4 width is 210mm)
+  
+  const colPositions = [startX];
+  for (let i = 1; i < colWidths.length; i++) {
+    colPositions[i] = colPositions[i-1] + colWidths[i-1];
+  }
+  
+  // Headers
+  const headers = ["Rank", "Name", "Score", "Time Taken"];
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  
+  // Draw header background with a nice color
+  doc.setFillColor(52, 152, 219); // Nice blue color
+  doc.rect(startX, startY - 8, tableWidth, rowHeight, 'F');
+  
+  // Draw header text
+  doc.setTextColor(255, 255, 255);
+  headers.forEach((header, i) => {
+    doc.text(header, colPositions[i] + colWidths[i]/2, startY - 1, { align: 'center' });
+  });
+  
+  // Reset for data rows
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  
+  // Draw data rows
+  entries.forEach((entry, rowIndex) => {
+    const y = startY + (rowIndex + 1) * rowHeight - 1;
     
-    // Title
-    doc.setFontSize(16);
-    doc.text(`Class ${classNo} Leaderboard`, 14, 18);
-    
-    // Table setup
-    const startY = 30;
-    const rowHeight = 8;
-    const colWidths = [20, 50, 40, 25, 35]; // Column widths
-    const colPositions = [14]; // Starting positions for each column
-    
-    // Calculate column positions
-    for (let i = 1; i < colWidths.length; i++) {
-      colPositions[i] = colPositions[i-1] + colWidths[i-1];
+    // Alternate row background (very light)
+    if (rowIndex % 2 === 1) {
+      doc.setFillColor(248, 249, 250);
+      doc.rect(startX, y - 8, tableWidth, rowHeight, 'F');
     }
     
-    // Headers
-    const headers = ["Rank", "Name", "Mobile", "Score", "Status"];
-    doc.setFontSize(12);
-    doc.setFont('bold');
-    
-    // Draw header background
-    doc.setFillColor(41, 128, 185);
-    doc.rect(14, startY - 6, colWidths.reduce((a, b) => a + b, 0), rowHeight, 'F');
-    
-    // Draw header text
-    doc.setTextColor(255, 255, 255);
-    headers.forEach((header, i) => {
-      doc.text(header, colPositions[i] + colWidths[i]/2, startY, { align: 'center' });
-    });
-    
-    // Reset text color and font
+    // Rank column with special styling for top positions
     doc.setTextColor(0, 0, 0);
-    doc.setFont('normal');
-    doc.setFontSize(10);
-    
-    // Draw data rows
-    entries.forEach((entry, rowIndex) => {
-      const y = startY + (rowIndex + 1) * rowHeight + 2;
-      
-      // Alternate row background
-      if (rowIndex % 2 === 1) {
-        doc.setFillColor(245, 245, 245);
-        doc.rect(14, y - 6, colWidths.reduce((a, b) => a + b, 0), rowHeight, 'F');
-      }
-      
-      const rowData = [
-        entry.rank !== undefined ? entry.rank.toString() : "-",
-        entry.name || "N/A",
-        entry.mobile || "N/A",
-        entry.score !== null && entry.score !== undefined ? entry.score.toFixed(2) : "-",
-        entry.participated ? "✓ Yes" : "✗ No",
-      ];
-      
-      rowData.forEach((data, colIndex) => {
-        const align = colIndex === 1 ? 'left' : 'center'; // Name column left-aligned
-        const x = align === 'center' ? colPositions[colIndex] + colWidths[colIndex]/2 : colPositions[colIndex] + 2;
-        doc.text(data, x, y, { align: align as any });
-      });
-    });
-    
-    // Draw table borders
-    const tableHeight = (entries.length + 1) * rowHeight + 2;
-    const tableWidth = colWidths.reduce((a, b) => a + b, 0);
-    
-    // Outer border
-    doc.setDrawColor(0, 0, 0);
-    doc.rect(14, startY - 6, tableWidth, tableHeight);
-    
-    // Column separators
-    let x = 14;
-    for (let i = 0; i < colWidths.length - 1; i++) {
-      x += colWidths[i];
-      doc.line(x, startY - 6, x, startY - 6 + tableHeight);
+    if (entry.rank === 1) {
+      // Gold background for 1st place
+      doc.setFillColor(255, 215, 0);
+      doc.roundedRect(colPositions[0] + 5, y - 7, 15, 10, 2, 2, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+    } else if (entry.rank === 2) {
+      // Silver background for 2nd place
+      doc.setFillColor(192, 192, 192);
+      doc.roundedRect(colPositions[0] + 5, y - 7, 15, 10, 2, 2, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+    } else {
+      doc.setFont('helvetica', 'normal');
     }
     
-    // Row separators
-    for (let i = 0; i <= entries.length; i++) {
-      const y = startY - 6 + (i + 1) * rowHeight;
-      doc.line(14, y, 14 + tableWidth, y);
-    }
+    const rankText = entry.rank !== undefined ? entry.rank.toString() : "-";
+    doc.text(rankText, colPositions[0] + colWidths[0]/2, y, { align: 'center' });
     
-    // Save
-    doc.save(`Class${classNo}_Leaderboard.pdf`);
-  };
-
+    // Reset font for other columns
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    
+    // Name column (left aligned)
+    const nameText = entry.name || "N/A";
+    doc.text(nameText, colPositions[1] + 3, y, { align: 'left' });
+    
+    // Score column (center aligned)
+    const scoreText = entry.score !== null && entry.score !== undefined 
+      ? entry.score.toFixed(2) 
+      : "-";
+    doc.text(scoreText, colPositions[2] + colWidths[2]/2, y, { align: 'center' });
+    
+    // Time taken column (center aligned) - empty for now
+    doc.text("-", colPositions[3] + colWidths[3]/2, y, { align: 'center' });
+  });
+  
+  // Add footer with generation info
+  const footerY = 280; // Near bottom of page
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.setFont('helvetica', 'normal');
+  const generatedText = `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+  doc.text(generatedText, 105, footerY, { align: 'center' });
+  
+  // Save with timestamp
+  const timestamp = new Date().toISOString().slice(0, 10);
+  doc.save(`Class${classNo}_Leaderboard_${timestamp}.pdf`);
+};
 
   const renderLeaderboard = (
     entries: LeaderboardEntry[],
@@ -327,8 +376,17 @@ const TeachersDashboardLeaderboard: React.FC = () => {
             </div>
           </div>
           <div>
-            <button onClick={() => exportLeaderboardAsPDF(entries, classNo)}
-            className="align-middle border-2 border-amber-600 rounded-xl py-1 px-2 bg-amber-500 shadow-amber-800 shadow-md hover:bg-amber-600 hover:text-lg">🗎 Export to PDF</button>
+            <button 
+              onClick={() => exportLeaderboardAsPDF(
+                entries, 
+                classNo,
+                "2024-01-15", // Replace with actual test date
+                ["Algebra", "Geometry"] // Replace with actual chapters
+              )}
+              className="align-middle border-2 border-amber-600 rounded-xl py-1 px-2 bg-amber-500 shadow-amber-800 shadow-md hover:bg-amber-600 hover:text-lg"
+            >
+              🗎 Export to PDF
+            </button>
           </div>
         </div>
 
