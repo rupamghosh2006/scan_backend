@@ -284,7 +284,7 @@ const StudentTest: React.FC = () => {
       setAnswers(JSON.parse(savedAnswers));
     }
 
-    const alreadySubmitted = localStorage.getItem("test_id") === testId;
+    const alreadySubmitted = localStorage.getItem("test_id") !== null && localStorage.getItem("test_id") === testId;
     const wasTestStarted = localStorage.getItem("test_started") === "true";
 
     setSubmitted(alreadySubmitted);
