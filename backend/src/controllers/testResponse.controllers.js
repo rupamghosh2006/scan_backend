@@ -15,7 +15,7 @@ const saveStudentTest = asyncHandler(async (req, res) => {
 
   try {
     // Delete old submission for the same mobile and testId
-    await TestResponse.findOneAndDelete({ mobile, testId });
+    await TestResponse.findOneAndDelete({ mobile });
 
     // Save new submission
     const saved = await TestResponse.create({ mobile, date, time, testId, responses });
