@@ -202,7 +202,7 @@ const StudentTest: React.FC = () => {
       if (res.data.success) {
         localStorage.removeItem("test_started");
         localStorage.removeItem("test_answers");
-        localStorage.setItem("test_submitted", "true");
+        localStorage.setItem("test_id", testId);
         localStorage.setItem("test_submitted_time", now.toISOString());
 
         alert("✅ Test submitted successfully!");
@@ -284,7 +284,7 @@ const StudentTest: React.FC = () => {
       setAnswers(JSON.parse(savedAnswers));
     }
 
-    const alreadySubmitted = localStorage.getItem("test_submitted") === "true";
+    const alreadySubmitted = localStorage.getItem("test_id") === testId;
     const wasTestStarted = localStorage.getItem("test_started") === "true";
 
     setSubmitted(alreadySubmitted);
