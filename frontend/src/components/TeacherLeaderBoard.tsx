@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import jsPDF from 'jspdf';
 
 interface Student {
   _id: string;
@@ -215,6 +216,98 @@ const TeachersDashboardLeaderboard: React.FC = () => {
     );
   }
 
+ const exportLeaderboardAsPDF = (
+    entries: LeaderboardEntry[],
+    classNo: number
+  ) => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(16);
+    doc.text(`Class ${classNo} Leaderboard`, 14, 18);
+    
+    // Table setup
+    const startY = 30;
+    const rowHeight = 8;
+    const colWidths = [20, 50, 40, 25, 35]; // Column widths
+    const colPositions = [14]; // Starting positions for each column
+    
+    // Calculate column positions
+    for (let i = 1; i < colWidths.length; i++) {
+      colPositions[i] = colPositions[i-1] + colWidths[i-1];
+    }
+    
+    // Headers
+    const headers = ["Rank", "Name", "Mobile", "Score", "Status"];
+    doc.setFontSize(12);
+    doc.setFont('bold');
+    
+    // Draw header background
+    doc.setFillColor(41, 128, 185);
+    doc.rect(14, startY - 6, colWidths.reduce((a, b) => a + b, 0), rowHeight, 'F');
+    
+    // Draw header text
+    doc.setTextColor(255, 255, 255);
+    headers.forEach((header, i) => {
+      doc.text(header, colPositions[i] + colWidths[i]/2, startY, { align: 'center' });
+    });
+    
+    // Reset text color and font
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('normal');
+    doc.setFontSize(10);
+    
+    // Draw data rows
+    entries.forEach((entry, rowIndex) => {
+      const y = startY + (rowIndex + 1) * rowHeight + 2;
+      
+      // Alternate row background
+      if (rowIndex % 2 === 1) {
+        doc.setFillColor(245, 245, 245);
+        doc.rect(14, y - 6, colWidths.reduce((a, b) => a + b, 0), rowHeight, 'F');
+      }
+      
+      const rowData = [
+        entry.rank !== undefined ? entry.rank.toString() : "-",
+        entry.name || "N/A",
+        entry.mobile || "N/A",
+        entry.score !== null && entry.score !== undefined ? entry.score.toFixed(2) : "-",
+        entry.participated ? "✓ Yes" : "✗ No",
+      ];
+      
+      rowData.forEach((data, colIndex) => {
+        const align = colIndex === 1 ? 'left' : 'center'; // Name column left-aligned
+        const x = align === 'center' ? colPositions[colIndex] + colWidths[colIndex]/2 : colPositions[colIndex] + 2;
+        doc.text(data, x, y, { align: align as any });
+      });
+    });
+    
+    // Draw table borders
+    const tableHeight = (entries.length + 1) * rowHeight + 2;
+    const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+    
+    // Outer border
+    doc.setDrawColor(0, 0, 0);
+    doc.rect(14, startY - 6, tableWidth, tableHeight);
+    
+    // Column separators
+    let x = 14;
+    for (let i = 0; i < colWidths.length - 1; i++) {
+      x += colWidths[i];
+      doc.line(x, startY - 6, x, startY - 6 + tableHeight);
+    }
+    
+    // Row separators
+    for (let i = 0; i <= entries.length; i++) {
+      const y = startY - 6 + (i + 1) * rowHeight;
+      doc.line(14, y, 14 + tableWidth, y);
+    }
+    
+    // Save
+    doc.save(`Class${classNo}_Leaderboard.pdf`);
+  };
+
+
   const renderLeaderboard = (
     entries: LeaderboardEntry[],
     classNo: number,
@@ -225,11 +318,17 @@ const TeachersDashboardLeaderboard: React.FC = () => {
 
     return (
       <section className="w-full max-w-5xl mx-auto mb-8 bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6">
-          <h2 className="text-2xl font-bold mb-2">Class {classNo} Leaderboard</h2>
-          <p className="italic text-blue-100 mb-3">"{quote}"</p>
-          <div className="text-sm text-blue-100">
-            Participation: {participatedCount}/{totalCount} students
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 flex justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Class {classNo} Leaderboard</h2>
+            <p className="italic text-blue-100 mb-3">"{quote}"</p>
+            <div className="text-sm text-blue-100">
+              Participation: {participatedCount}/{totalCount} students
+            </div>
+          </div>
+          <div>
+            <button onClick={() => exportLeaderboardAsPDF(entries, classNo)}
+            className="align-middle border-2 border-amber-600 rounded-xl py-1 px-2 bg-amber-500 shadow-amber-800 shadow-md hover:bg-amber-600 hover:text-lg">🗎 Export to PDF</button>
           </div>
         </div>
 
@@ -301,7 +400,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-cyan-100 py-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Leaderboard</h1>
