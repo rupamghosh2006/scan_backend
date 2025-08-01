@@ -16,6 +16,7 @@ interface AnswerMap {
 }
 
 interface Test {
+  _id: string; // Added _id for testId
   date: string;
   time: string;
   chapters: string[];
@@ -26,40 +27,26 @@ interface Test {
 
 const StudentTest: React.FC = () => {
   // === State ===
-  // Questions from test server
   const [questions, setQuestions] = useState<Question[]>([]);
-  // Current question index displayed
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Map of questionId to selected option
   const [answers, setAnswers] = useState<AnswerMap>({});
-  // Flag if test started
   const [testStarted, setTestStarted] = useState(false);
-  // Time left in seconds for countdown
   const [timeLeft, setTimeLeft] = useState(0);
-  // Interval ID for countdown timer
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-  // Flag if start button is allowed (based on test start time)
   const [startAllowed, setStartAllowed] = useState(false);
-  // Subject being tested
   const [subject, setSubject] = useState("");
-  // Flag if test submitted
   const [submitted, setSubmitted] = useState(false);
-  // Flag to prevent multiple submissions concurrently
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // The absolute Date object when test ends
   const [testEndTime, setTestEndTime] = useState<Date | null>(null);
-  // Full test data fetched from server
   const [testData, setTestData] = useState<Test | null>(null);
+  const [testId, setTestId] = useState<string | null>(null); // New: store testId
 
   // === Refs ===
-  // Keep a ref to the latest answers to avoid stale closure in timers
   const answersRef = useRef<AnswerMap>(answers);
 
-  // === Extract student info from localStorage ===
-  // classNo and studentMobile used for test and submission
+  // Extract student info (mobile & classNo) from localStorage
   let classNo: number | undefined = undefined;
   let studentMobile: string | undefined = undefined;
-
   if (typeof window !== "undefined") {
     const storedStudent = localStorage.getItem("student");
     if (storedStudent) {
@@ -70,10 +57,7 @@ const StudentTest: React.FC = () => {
     }
   }
 
-  /**
-   * Utility: Shuffle array elements in place for randomness
-   * Used to randomize question and option order for fairness
-   */
+  // Utility: Shuffle array elements in place
   const shuffleArray = (arr: any[]) => {
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -81,24 +65,16 @@ const StudentTest: React.FC = () => {
     }
   };
 
-  /**
-   * Calculate remaining time in seconds until the given end time
-   * Ensures timer counts down correctly even if page reload occurs during test
-   */
+  // Calculate remaining time in seconds until the given end time
   const calculateTimeRemaining = (endTime: Date): number => {
     const now = new Date();
     return Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
   };
 
-  /**
-   * Load test configuration and questions from backend API
-   * Sets test metadata, valid questions based on class and chapters
-   * Calculates official test end time based on start time and duration
-   */
+  // Load test configuration and questions from backend API
   const loadTestConfig = async () => {
     try {
       const res = await fetch(`http://localhost:4000/api/v1/tests/${classNo}`);
-      // Expecting array of tests; pick first or only
       const [test] = await res.json();
 
       if (!test) {
@@ -107,89 +83,76 @@ const StudentTest: React.FC = () => {
         return;
       }
 
-      // Destructure test details
+      setTestId(test._id); // Save test ID here!
+
       const { chapters, total_marks, subject, time, date, duration } = test;
       setSubject(subject || "Math");
       setTestData(test);
 
-      // Calculate absolute test end time by adding duration (or total marks as minutes) to test start time
-      const testDuration = duration || total_marks; // fallback
+      const testDuration = duration || total_marks; // fallback duration
       const testStartTime = new Date(`${date}T${time}`);
       const calculatedEndTime = new Date(testStartTime.getTime() + testDuration * 60 * 1000);
       setTestEndTime(calculatedEndTime);
 
       const now = new Date();
 
-      // Check test start/end to control when student can press start
+      // Control start button availability
       if (now < testStartTime) {
         setStartAllowed(false);
-        // Delay enabling start until test start time
         const delay = testStartTime.getTime() - now.getTime();
         setTimeout(() => setStartAllowed(true), delay);
       } else if (now >= calculatedEndTime) {
-        // Test ended before student could start
         setStartAllowed(false);
         setSubmitted(true);
         alert("Test time has ended. You cannot start the test now.");
         return;
       } else {
-        // Test is active; allow immediate start
         setStartAllowed(true);
       }
 
-      // Set the remaining time for countdown display
       setTimeLeft(calculateTimeRemaining(calculatedEndTime));
 
-      // Fetch questions to display to the student
+      // Fetch all questions
       const qRes = await fetch("http://localhost:4000/api/v1/scan/questions");
       const qJson = await qRes.json();
 
-      // Filter questions by class and chapters in the test
+      // Filter questions based on class and chapters
       const validQuestions: Question[] = qJson.data.filter(
         (q: Question) => q.class === classNo && chapters.includes(q.chapter)
       );
 
-      // Allocate questions evenly across chapters based on total marks
+      // Allocate per chapter evenly
       const perChapter = Math.floor(total_marks / chapters.length);
       let selected: Question[] = [];
 
       chapters.forEach((chapter: string) => {
         const chapterQs = validQuestions.filter((q) => q.chapter === chapter);
-        shuffleArray(chapterQs); // Shuffle for random question selection
+        shuffleArray(chapterQs);
         selected.push(...chapterQs.slice(0, perChapter));
       });
 
-      shuffleArray(selected); // Shuffle all selected questions for fair distribution
+      shuffleArray(selected);
       setQuestions(selected);
     } catch (err) {
       console.error("❌ Error loading test config:", err);
     }
   };
 
-  /**
-   * Starts the test countdown and marks test as started
-   * Also marks first question as visited and starts auto-submit timer
-   */
+  // Start the test, initialize timers and flags
   const startTest = () => {
-    // Prevent starting more than once or after submission
     if (testStarted || submitted || !testEndTime) return;
 
     setTestStarted(true);
     localStorage.setItem("test_started", "true");
 
-    // Mark first question visited as user begins (for UI and navigation)
     setQuestions((prev) => prev.map((q, i) => (i === 0 ? { ...q, visited: true } : q)));
 
-    // Start countdown timer updating timeLeft every second
     const id = setInterval(() => {
       setTimeLeft((prev) => {
         if (!testEndTime) return prev;
         const newTime = calculateTimeRemaining(testEndTime);
-
-        // Auto-submit when time reaches zero
         if (newTime <= 0) {
           clearInterval(id);
-          // Use latest answers from ref to avoid stale closure issue
           submitTest(answersRef.current);
           return 0;
         }
@@ -200,31 +163,27 @@ const StudentTest: React.FC = () => {
     setIntervalId(id);
   };
 
-  /**
-   * Submits the test answers to server
-   * Prevents duplicate submissions and handles retry on failure
-   * Accepts optional answers object for testing or timer closure use
-   */
+  // Submit test answers to backend
   const submitTest = async (submissionAnswers?: AnswerMap) => {
-    // Do nothing if already submitted or submission pending
     if (submitted || isSubmitting) return;
+    if (!testId) {
+      alert("Test ID not found. Cannot submit test.");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitted(true);
 
-    // Clear timer when submitting
     if (intervalId) clearInterval(intervalId);
 
-    // Use passed answers or latest from ref for consistency
     const toSubmit = submissionAnswers || answersRef.current;
 
-    // Map questions to response format expected by backend
     const result = questions.map((q, i) => ({
       questionNumber: i + 1,
       questionId: q._id,
       selectedOption: toSubmit[q._id] || null,
     }));
 
-    // Create submission timestamp fields
     const now = new Date();
     const date = now.toISOString().split("T")[0];
     const time = now.toTimeString().split(":").slice(0, 2).join(":");
@@ -233,23 +192,20 @@ const StudentTest: React.FC = () => {
       mobile: studentMobile,
       date,
       time,
+      testId, // include testId here
       responses: result,
     };
 
     try {
-      // Post responses to backend API
       const res = await axios.post("http://localhost:4000/api/v1/testResponses", submissionData);
 
       if (res.data.success) {
-        // Remove start flags, prevent re-submission, and clear saved answers
         localStorage.removeItem("test_started");
         localStorage.removeItem("test_answers");
-        localStorage.setItem("test_submitted", "true");
+        localStorage.setItem("test_id", testId);
         localStorage.setItem("test_submitted_time", now.toISOString());
 
         alert("✅ Test submitted successfully!");
-        // Optionally redirect to results
-        // window.location.href = "/student/results";
       } else {
         throw new Error("Submission failed on server");
       }
@@ -257,30 +213,23 @@ const StudentTest: React.FC = () => {
       console.error("❌ Submission error:", err);
       alert("❌ Something went wrong. Please try again.");
 
-      // Retry allowed by resetting states
       setIsSubmitting(false);
       setSubmitted(false);
 
-      // Restart timer if time not expired
       if (testEndTime && calculateTimeRemaining(testEndTime) > 0) {
         startTest();
       }
     }
   };
 
-  /**
-   * Formats the countdown timer (seconds) into MM:SS string
-   */
+  // Format countdown timer MM:SS
   const timerDisplay = () => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  /**
-   * Display question at given index and mark it visited
-   * Prevent question switching after submission
-   */
+  // Show question at index and mark visited
   const showQuestion = (index: number) => {
     if (submitted) return;
 
@@ -292,10 +241,7 @@ const StudentTest: React.FC = () => {
     });
   };
 
-  /**
-   * Handle student answer selection
-   * Also save answers to localStorage for persistence
-   */
+  // Handle option selection
   const handleAnswer = (qId: string, opt: string) => {
     if (submitted) return;
 
@@ -306,9 +252,7 @@ const StudentTest: React.FC = () => {
     });
   };
 
-  /**
-   * Clear selected answer for current question and update storage
-   */
+  // Clear answer for current question
   const clearAnswer = () => {
     if (submitted) return;
 
@@ -321,42 +265,26 @@ const StudentTest: React.FC = () => {
     });
   };
 
-  /**
-   * Listener to auto-submit if user closes or refreshes the page during test
-   * Prevents data loss
-   */
+  // Auto-submit if page is closed or refreshed during active test
   const handleBeforeUnload = () => {
     if (testStarted && !submitted) {
       submitTest(answersRef.current);
     }
   };
 
-  // === Effects ===
-
-  /**
-   * Keep answersRef updated with latest answers state
-   * Prevents stale closures for timers and async callbacks
-   */
+  // Sync answersRef to latest answers state
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
 
-  /**
-   * On component mount:
-   * - Hydrate answers from localStorage
-   * - Check for existing submission flags
-   * - Load test config and questions
-   * - Setup unload event listener to auto-submit on page close/refresh
-   */
+  // On mount load test config, hydrate state, and handle unload event
   useEffect(() => {
-    // Retrieve persisted answers if any
     const savedAnswers = localStorage.getItem("test_answers");
     if (savedAnswers) {
       setAnswers(JSON.parse(savedAnswers));
     }
 
-    // Check if test submitted previously
-    const alreadySubmitted = localStorage.getItem("test_submitted") === "true";
+    const alreadySubmitted = localStorage.getItem("test_id") !== null && localStorage.getItem("test_id") === testId;
     const wasTestStarted = localStorage.getItem("test_started") === "true";
 
     setSubmitted(alreadySubmitted);
@@ -366,20 +294,14 @@ const StudentTest: React.FC = () => {
 
     loadTestConfig();
 
-    // Attach unload listener
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Clear main timer interval on unmount
       if (intervalId) clearInterval(intervalId);
     };
   }, []);
 
-  /**
-   * Global enforcement timer
-   * Checks if test end time is reached to call submitTest automatically,
-   * regardless of when student started.
-   */
+  // Global check for test end time reached
   useEffect(() => {
     if (!testEndTime || submitted) return;
 
@@ -395,7 +317,7 @@ const StudentTest: React.FC = () => {
     return () => clearInterval(globalTimer);
   }, [testEndTime, testStarted, submitted]);
 
-  // === Render ===
+  // Render component JSX
   return (
     <div className="w-full max-w-3xl mx-auto p-4">
       {!testStarted ? (
@@ -424,33 +346,23 @@ const StudentTest: React.FC = () => {
               onClick={startTest}
               disabled={!startAllowed || isSubmitting}
               className={`mt-4 px-6 py-2 rounded text-white ${
-                startAllowed && !isSubmitting
-                  ? "bg-cyan-600 hover:bg-cyan-700"
-                  : "bg-gray-400 cursor-not-allowed"
+                startAllowed && !isSubmitting ? "bg-cyan-600 hover:bg-cyan-700" : "bg-gray-400 cursor-not-allowed"
               }`}
             >
-              {!startAllowed
-                ? "Wait for Start Time"
-                : isSubmitting
-                ? "Starting..."
-                : "Start Test"}
+              {!startAllowed ? "Wait for Start Time" : isSubmitting ? "Starting..." : "Start Test"}
             </button>
           </div>
         )
       ) : submitted ? (
         <div className="text-center text-green-600 text-xl font-semibold mt-10">
           ✅ Test has been submitted successfully!
-          <p className="text-sm text-gray-600 mt-2">
-            Thank you for taking the test. You may now close this window.
-          </p>
+          <p className="text-sm text-gray-600 mt-2">Thank you for taking the test. You may now close this window.</p>
         </div>
       ) : (
         <>
           {/* Timer and Submit Button */}
           <div className="flex justify-between items-center mb-4">
-            <span className="bg-gray-800 text-white px-4 py-2 rounded text-lg font-mono">
-              ⏰ {timerDisplay()}
-            </span>
+            <span className="bg-gray-800 text-white px-4 py-2 rounded text-lg font-mono">⏰ {timerDisplay()}</span>
             <button
               onClick={() => submitTest(answersRef.current)}
               disabled={isSubmitting}
@@ -460,11 +372,10 @@ const StudentTest: React.FC = () => {
             </button>
           </div>
 
-          {/* Question Display */}
+          {/* Current Question */}
           <div className="bg-white p-6 rounded shadow space-y-4">
             <div className="font-medium text-lg">
-              <span className="text-gray-600">Q{currentIndex + 1}.</span>{" "}
-              {questions[currentIndex]?.question}
+              <span className="text-gray-600">Q{currentIndex + 1}.</span> {questions[currentIndex]?.question}
             </div>
 
             <div className="space-y-2">
@@ -484,7 +395,7 @@ const StudentTest: React.FC = () => {
               ))}
             </div>
 
-            {/* Navigation buttons for previous and next questions */}
+            {/* Navigation */}
             <div className="flex justify-between pt-4">
               <button
                 onClick={() => currentIndex > 0 && showQuestion(currentIndex - 1)}
@@ -502,7 +413,7 @@ const StudentTest: React.FC = () => {
               </button>
             </div>
 
-            {/* Clear current answer */}
+            {/* Clear answer */}
             <div className="flex justify-end pt-2">
               <button
                 onClick={clearAnswer}
@@ -514,7 +425,7 @@ const StudentTest: React.FC = () => {
             </div>
           </div>
 
-          {/* Grid navigation showing answer/visited state for all questions */}
+          {/* Question Grid Navigation */}
           <div className="grid grid-cols-5 gap-2 mt-6 p-4 bg-white shadow rounded text-sm">
             <div className="col-span-5 mb-2 text-xs text-gray-600">
               <span className="inline-block w-4 h-4 bg-green-500 rounded mr-1"></span>Answered
