@@ -313,7 +313,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
       // Rank w/ color for top 2
       doc.setTextColor(0, 0, 0);
       if (entry.rank === 1) {
-        doc.setFillColor(224, 194, 18); // Gold
+        doc.setFillColor(255, 215, 0); // Gold
         doc.roundedRect(colPositions[0] + 2, y - 7, 14, 10, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
       } else if (entry.rank === 2) {
