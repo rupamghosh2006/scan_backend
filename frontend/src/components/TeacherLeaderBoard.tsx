@@ -409,7 +409,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
               <tr>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Rank</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Name</th>
-                {/* <th className="py-3 px-4 text-left font-semibold text-gray-700">Mobile</th> */}
+                <th className="py-3 px-4 text-left font-semibold text-gray-700">Mobile</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Score</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Time Taken</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Status</th>
@@ -441,7 +441,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
                     )}
                   </td>
                   <td className="py-3 px-4 font-medium text-gray-900">{entry.name}</td>
-                  {/* <td className="py-3 px-4 text-gray-600">{entry.mobile}</td> */}
+                  <td className="py-3 px-4 text-gray-600">{entry.mobile}</td>
                   <td className="py-3 px-4">
                     {entry.score !== null ? (
                       <span className="font-semibold text-gray-900">{entry.score.toFixed(2)}</span>
