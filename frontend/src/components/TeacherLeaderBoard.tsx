@@ -280,7 +280,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
     // Table
     const startY = currentY;
     const rowHeight = 12;
-    const colWidths = [20, 60, 30, 35, 35]; // Rank, Name, Score, Time Taken, Mobile
+    const colWidths = [20, 60, 35, 35]; // Rank, Name, Score, Time Taken
     const tableWidth = colWidths.reduce((a, b) => a + b, 0);
     const startX = (210 - tableWidth) / 2;
 
@@ -290,7 +290,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
     }
 
     // Headers
-    const headers = ["Rank", "Name", "Score", "Time Taken", "Mobile"];
+    const headers = ["Rank", "Name", "Score", "Time Taken"];
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setFillColor(52, 152, 219);
@@ -313,11 +313,15 @@ const TeachersDashboardLeaderboard: React.FC = () => {
       // Rank w/ color for top 2
       doc.setTextColor(0, 0, 0);
       if (entry.rank === 1) {
-        doc.setFillColor(255, 215, 0); // Gold
+        doc.setFillColor(224, 194, 18); // Gold
         doc.roundedRect(colPositions[0] + 2, y - 7, 14, 10, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
       } else if (entry.rank === 2) {
-        doc.setFillColor(192, 192, 192); // Silver
+        doc.setFillColor(185, 196, 199); // Silver
+        doc.roundedRect(colPositions[0] + 2, y - 7, 14, 10, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+      } else if (entry.rank === 3) {
+        doc.setFillColor(222, 107, 106); // Bronze
         doc.roundedRect(colPositions[0] + 2, y - 7, 14, 10, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
       } else {
@@ -339,7 +343,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
       // Time Taken
       doc.text(entry.timeTakenFormatted ?? "-", colPositions[3] + colWidths[3]/2, y, { align: 'center' });
       // Mobile
-      doc.text(entry.mobile, colPositions[4] + 2, y, { align: 'left' });
+      //doc.text(entry.mobile, colPositions[4] + 2, y, { align: 'left' });
     });
 
     // Footer
@@ -405,7 +409,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
               <tr>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Rank</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Name</th>
-                <th className="py-3 px-4 text-left font-semibold text-gray-700">Mobile</th>
+                {/* <th className="py-3 px-4 text-left font-semibold text-gray-700">Mobile</th> */}
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Score</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Time Taken</th>
                 <th className="py-3 px-4 text-left font-semibold text-gray-700">Status</th>
@@ -437,7 +441,7 @@ const TeachersDashboardLeaderboard: React.FC = () => {
                     )}
                   </td>
                   <td className="py-3 px-4 font-medium text-gray-900">{entry.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{entry.mobile}</td>
+                  {/* <td className="py-3 px-4 text-gray-600">{entry.mobile}</td> */}
                   <td className="py-3 px-4">
                     {entry.score !== null ? (
                       <span className="font-semibold text-gray-900">{entry.score.toFixed(2)}</span>
