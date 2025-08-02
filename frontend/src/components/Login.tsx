@@ -73,7 +73,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
 
   return (
-    <div className="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div className="bg-cyan-100 flex items-center justify-center min-h-screen">
       <form
         onSubmit={handleLogin}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-4"
