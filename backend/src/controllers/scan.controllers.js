@@ -1,4 +1,4 @@
-/// MOSTLY VIBE CODED :) but check from line 43. Thats imp dos
+/// MOSTLY VIBE CODED :) but check from line 43, 64. Thats imp dos
 import FormData from 'form-data';
 
 const scanpdf = async (req, res) => {
@@ -61,7 +61,7 @@ const scanpdf = async (req, res) => {
       body: formData
     });
 
-    // Check if the response is successful
+    // Check if the response is successful (CHECK THIS...)
     if (!mathpixResponse.ok) {
       const errorData = await mathpixResponse.json().catch(() => ({}));
       return res.status(mathpixResponse.status).json({
