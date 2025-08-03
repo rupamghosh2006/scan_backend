@@ -120,3 +120,4 @@ dist
 .astro/
 .vscode/
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+frontend/.astro/types.d.ts
