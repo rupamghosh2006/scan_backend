@@ -49,6 +49,7 @@ app.use("/api/v1/tests", testConfigRoutes)
 import testResponseRoutes from "./routes/testResponse.routes.js";
 app.use("/api/v1/testResponses", testResponseRoutes);
 
+//scan v2 routes
 import scan from "./routes/scan.route.js"
 app.use("/api/v2/scan", scan)
 

@@ -1,3 +1,4 @@
+/// MOSTLY VIBE CODED :) but check from line 43. Thats imp dos
 import FormData from 'form-data';
 
 const scanpdf = async (req, res) => {
@@ -38,6 +39,16 @@ const scanpdf = async (req, res) => {
     };
     
     formData.append('options_json', JSON.stringify(options));
+
+
+    /*
+    MATHPIX cURL TUTORIAL FROM DOC
+    curl --location --request POST 'https://api.mathpix.com/v3/pdf' \
+      --header 'app_id: APP_ID' \
+      --header 'app_key: APP_KEY' \
+      --form 'file=@"cs229-notes5.pdf"' \
+      --form 'options_json="{\"conversion_formats\": {\"docx\": true, \"tex.zip\": true}, \"math_inline_delimiters\": [\"$\", \"$\"], \"rm_spaces\": true}"'
+    */
 
     // Make request to Mathpix API using fetch
     const mathpixResponse = await fetch('https://api.mathpix.com/v3/pdf', {

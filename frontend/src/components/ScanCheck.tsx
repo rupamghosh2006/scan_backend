@@ -1,3 +1,4 @@
+/// TOO MANY COMMENTS...I asked claude to improve my code (shit fucking dickhead design ki korlo idk pore dekha jabe though.. akn to kaj e korche na)
 import axios from "axios";
 import { useState } from "react";
 
@@ -10,8 +11,8 @@ const ScanCheck = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setSelectedFile(file);
-    setError(null); // Clear previous errors
-    setResult(null); // Clear previous results
+    setError(null);
+    setResult(null);
   };
 
   const pdfConvert = async () => {
@@ -40,7 +41,7 @@ const ScanCheck = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.post('http://localhost:4000/api/v1/scan', formData, {
+      const response = await axios.post('http://localhost:4000/api/v2/scan', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
