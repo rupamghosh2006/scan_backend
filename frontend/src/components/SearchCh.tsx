@@ -1,9 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { class11Chap, class12Chap } from "../middleware";
-
-const class11: string[] = class11Chap();
-const class12: string[] = class12Chap();
-const chapters: string[] = [...class11, ...class12];
 
 interface Props {
   selectedClass: string;
@@ -11,36 +7,37 @@ interface Props {
 }
 
 const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
-  const [input, setInput] = useState<string>("");
-  const [filtered, setFiltered] = useState<string[]>([]);
-  const [prevClass, setPrevClass] = useState<string>("");
+  const class11 = useMemo(() => class11Chap(), []);
+  const class12 = useMemo(() => class12Chap(), []);
+  const chapters = useMemo(() => [...class11, ...class12], [class11, class12]);
 
-  const getChapters = (): string[] => {
+  const getChapters = () => {
     if (selectedClass === "11") return class11;
     if (selectedClass === "12") return class12;
     return chapters;
   };
 
+  const [input, setInput] = useState("");
+  const [filtered, setFiltered] = useState<string[]>([]);
+
   useEffect(() => {
-    if (selectedClass !== prevClass) {
-      setPrevClass(selectedClass);
-      setInput("");
-      setFiltered([]);
-      onChapterSelect(""); // Reset selected chapter on class change
-    }
-  }, [selectedClass]);
+    setInput("");
+    setFiltered([]);
+    onChapterSelect("");
+  }, [selectedClass, onChapterSelect]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
     const availableChapters = getChapters();
-    const results = val
-      ? availableChapters.filter((ch) =>
-          ch.toLowerCase().includes(val.toLowerCase())
-        )
-      : [];
-    setFiltered(results);
-    if (!val) onChapterSelect(""); // Reset on empty input
+    setFiltered(
+      val
+        ? availableChapters.filter((ch) =>
+            ch.toLowerCase().includes(val.toLowerCase())
+          )
+        : []
+    );
+    if (!val) onChapterSelect("");
   };
 
   const handleSelect = (item: string) => {
@@ -57,6 +54,7 @@ const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
         value={input}
         onChange={handleInputChange}
         className="w-full px-4 py-2 border border-cyan-600 rounded-full bg-white placeholder-gray-500"
+        autoComplete="off"
       />
       {filtered.length > 0 && (
         <ul className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-b-lg shadow z-10 max-h-40 overflow-y-auto">
@@ -65,6 +63,10 @@ const ChapterSearch: React.FC<Props> = ({ selectedClass, onChapterSelect }) => {
               key={item}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => handleSelect(item)}
+              tabIndex={0}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') handleSelect(item);
+              }}
             >
               {item}
             </li>
