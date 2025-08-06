@@ -120,3 +120,4 @@ dist
 .astro/
 .vscode/
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+backend/public/temp/pdf-1754485763341-913898822.pdf
