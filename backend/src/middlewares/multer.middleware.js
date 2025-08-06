@@ -25,6 +25,6 @@ export const upload = multer({
   storage,
   fileFilter, // Optional: uncomment to restrict to PDFs only
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   }
 });
