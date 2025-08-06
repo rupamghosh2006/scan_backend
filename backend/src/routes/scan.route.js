@@ -1,4 +1,4 @@
-import { scanPdf } from "../controllers/scan.controller";
+import { scanPdf } from "../controllers/scan.controller.js";
 import { Router } from "express";
 
 const router = Router()

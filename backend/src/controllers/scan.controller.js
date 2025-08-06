@@ -1,4 +1,6 @@
-import fetch, { FormData, fileFromSync } from 'node-fetch';
+// import fetch, { FormData, fileFromSync } from 'node-fetch';
+import pkg from 'node-fetch';
+const { FormData, fileFromSync } = pkg;
 
 const scanPdf = (req, res) => {
     const form = new FormData()
