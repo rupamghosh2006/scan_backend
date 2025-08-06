@@ -1,9 +1,17 @@
 import fetch, { FormData, fileFromSync } from 'node-fetch';
 
 const scanPdf = (req, res) => {
+    const form = new FormData()
+    form.append('file', fileFromSync(req.file))
+    form.append('options_json', '{"conversion_formats": {"docx": true, "tex.zip": true}, "math_inline_delimiters": ["$", "$"], "rm_spaces": true}');
+
+    if (req.file) {
+        console.log('File uploaded!');
+    }
+}
 
 
-    const form = new FormData();
+    /*const form = new FormData();
     form.append('file', fileFromSync('cs229-notes5.pdf'));
     form.append('options_json', '{"conversion_formats": {"docx": true, "tex.zip": true}, "math_inline_delimiters": ["$", "$"], "rm_spaces": true}');
 
@@ -16,8 +24,7 @@ const scanPdf = (req, res) => {
     body: form
     });
 
-    console.log(pdfId)
-}
+    console.log(pdfId)*/
 
 /*
 import fetch from 'node-fetch';
@@ -69,3 +76,5 @@ curl --location --request GET 'https://api.mathpix.com/v3/pdf/{pdf_id}.pptx' \
 --header 'app_key: APP_KEY' \
 --header 'app_id: APP_ID' > {pdf_id}.pptx
 */
+
+export {scanPdf}
