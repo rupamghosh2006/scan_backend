@@ -7,7 +7,8 @@ const app = express()
 // ✅ Enable CORS for all origins
 app.use(cors(
     {
-            origin: process.env.CORS_ORIGIN,
+            // origin: process.env.CORS_ORIGIN,
+            origin: '*',
             credentials: true
         }
 ));
@@ -51,4 +52,8 @@ app.use("/api/v1/testResponses", testResponseRoutes);
 
 import scan from "./routes/scan.route.js"
 app.use("/api/v2/scan", scan)
+
+import upload from "./routes/upload.route.js"
+app.use("/api/v2/upload", upload)
+
 export {app}
