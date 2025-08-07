@@ -21,10 +21,12 @@ interface ExtractedResponse {
   success: boolean;
   message: string;
   data: {
-    pdf_id: string;
+    file_type?: string;
+    pdf_id?: string;
     total_questions: number;
     questions: Question[];
     processing_time: string;
+    original_filename?: string;
   };
 }
 
@@ -39,7 +41,7 @@ interface QuestionToSave {
 }
 
 interface Props {
-  chapters?: string[]; // Made optional with default
+  chapters?: string[];
   backendUrl?: string;
 }
 
@@ -66,7 +68,6 @@ const DEFAULT_CHAPTERS = [
 // KaTeX Render Component
 const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  window.global = window;
   
   useEffect(() => {
     const loadKaTeX = async () => {
@@ -102,6 +103,7 @@ const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
               try {
                 return window.katex.renderToString(math, { displayMode: true });
               } catch (e) {
+                console.warn('KaTeX rendering failed for:', math);
                 return match; // Return original if rendering fails
               }
             })
@@ -110,6 +112,7 @@ const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
               try {
                 return window.katex.renderToString(math, { displayMode: false });
               } catch (e) {
+                console.warn('KaTeX rendering failed for:', math);
                 return match; // Return original if rendering fails
               }
             });
@@ -117,7 +120,9 @@ const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
           containerRef.current.innerHTML = processedText;
         } catch (error) {
           // Fallback to plain text if rendering fails
-          containerRef.current.textContent = text;
+          if (containerRef.current) {
+            containerRef.current.textContent = text;
+          }
         }
       }
     };
@@ -166,42 +171,62 @@ const ScanCheck: React.FC<Props> = ({
     if (chapters.length > 0 && !selectedChapter) {
       setSelectedChapter(chapters[0]);
     }
-  }, [chapters]);
+  }, [chapters, selectedChapter]);
 
   // File upload handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      const fileType = selectedFile.type;
+      
+      // Validate file type
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ];
+      
+      if (!allowedTypes.includes(fileType)) {
+        alert("Please select a PDF or image file (JPEG, PNG, GIF, WebP)");
+        return;
+      }
+      
+      setFile(selectedFile);
     }
   };
 
-  // Upload and process PDF
+  // Upload and process file
   const handleUpload = async () => {
     if (!file) {
-      alert("Please select a PDF file.");
+      alert("Please select a file.");
       return;
     }
 
     const formData = new FormData();
-    formData.append("pdf", file);
+    formData.append("pdf", file); // Keep "pdf" as field name for consistency
     
     setIsUploading(true);
     
     try {
+      // Use the same upload endpoint for both PDFs and images
       const response = await axios.post(`${backendUrl}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       const data: ExtractedResponse = response.data;
+      console.log(data);
       
       if (data.success && data.data.questions.length > 0) {
         setExtractedQuestions(data.data.questions);
         setCurrentQuestionIndex(0);
         setSavedCount(0);
-        setSavedQuestions(new Set()); // Reset saved questions
-        console.log(`Extracted ${data.data.total_questions} questions`);
+        setSavedQuestions(new Set());
+        console.log(`Extracted ${data.data.total_questions} questions from ${data.data.file_type || 'PDF'}`);
       } else {
-        alert("No questions found in the PDF or processing failed.");
+        alert("No questions found in the file or processing failed.");
       }
     } catch (err) {
       console.error("Upload error:", err);
@@ -284,7 +309,7 @@ const ScanCheck: React.FC<Props> = ({
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
       <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-        PDF Question Extractor & Editor
+        PDF & Image Question Extractor & Editor
       </h1>
 
       {/* Upload Section */}
@@ -300,17 +325,25 @@ const ScanCheck: React.FC<Props> = ({
                 className="hidden"
               />
             </label>
-            <button
-              disabled
-              className="bg-gray-400 text-white px-6 py-2 rounded-lg cursor-not-allowed"
-            >
-              📷 Upload Image (Coming Soon)
-            </button>
+            <label className="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
+              📷 Select Image
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
           </div>
           
           {file && (
             <div className="text-center">
-              <p className="text-gray-600">Selected: {file.name}</p>
+              <p className="text-gray-600">
+                Selected: {file.name}
+                <span className="text-sm text-gray-500 ml-2">
+                  ({file.type.startsWith('image/') ? 'Image' : 'PDF'})
+                </span>
+              </p>
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
@@ -380,7 +413,7 @@ const ScanCheck: React.FC<Props> = ({
             />
             
             {/* KaTeX Preview */}
-            <div className="mt-2 p-3 h-30 bg-white border rounded-lg">
+            <div className="mt-2 p-3 bg-white border rounded-lg max-h-40 overflow-y-auto">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
               <KaTeXRender text={editedQuestion} />
             </div>
@@ -425,7 +458,7 @@ const ScanCheck: React.FC<Props> = ({
                     disabled={isCurrentQuestionSaved}
                   />
                   {/* Option Preview */}
-                  <div className="text-sm text-gray-600 bg-white p-2 border rounded">
+                  <div className="text-sm text-gray-600 bg-white p-2 border rounded max-h-20 overflow-y-auto">
                     <KaTeXRender text={editedOptions[index]} />
                   </div>
                 </div>
@@ -540,7 +573,8 @@ const ScanCheck: React.FC<Props> = ({
       {/* No questions state */}
       {!hasQuestions && !isUploading && (
         <div className="text-center py-12 text-gray-500">
-          <p>Upload a PDF to extract and edit questions</p>
+          <p>Upload a PDF or image file to extract and edit questions</p>
+          <p className="text-sm mt-2">Supported: PDF, JPEG, PNG, GIF, WebP</p>
         </div>
       )}
     </div>

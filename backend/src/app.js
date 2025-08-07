@@ -55,4 +55,7 @@ app.use("/api/v2/scan", scan)
 import upload from "./routes/upload.route.js"
 app.use("/api/v2/upload", upload)
 
+import image from "./routes/image.route.js"
+app.use("/api/v2/image", image)
+
 export {app}
