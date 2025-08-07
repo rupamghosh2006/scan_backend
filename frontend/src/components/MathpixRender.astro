@@ -1,0 +1,8 @@
+---
+import { MathpixMarkdownModel } from 'mathpix-markdown-it';
+const { text } = Astro.props
+
+const html = MathpixMarkdownModel.markdownToHTML(text)
+---
+
+<div>{html}</div>

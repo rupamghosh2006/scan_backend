@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import MathpixRender from './MathpixRender.astro';
 
 // Types
 interface Question {
@@ -193,12 +194,12 @@ const ScanCheck: React.FC<Props> = ({
   };
 
   // Render KaTeX (basic implementation)
-  const renderMath = (text: string) => {
+  {/*const renderMath = (text: string) => {
     // Simple math rendering - replace with actual KaTeX if needed
     return text
       .replace(/\$([^$]+)\$/g, '<span style="font-style: italic; color: #2563eb;">$1</span>')
       .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<sup>$1</sup>/<sub>$2</sub>');
-  };
+  };*/}
 
   const currentQuestion = extractedQuestions[currentQuestionIndex];
   const hasQuestions = extractedQuestions.length > 0;
@@ -288,12 +289,13 @@ const ScanCheck: React.FC<Props> = ({
             {/* KaTeX Preview */}
             <div className="mt-2 p-3 bg-white border rounded-lg">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
-              <div 
+              {/* <div 
                 dangerouslySetInnerHTML={{ 
                   __html: renderMath(editedQuestion) 
                 }} 
                 className="text-gray-800"
-              />
+              /> */}
+              <MathpixRender text={editedQuestion} />
             </div>
           </div>
 
@@ -334,12 +336,13 @@ const ScanCheck: React.FC<Props> = ({
                     placeholder={`Option ${letter}`}
                   />
                   {/* Option Preview */}
-                  <div 
+                  {/* <div 
                     dangerouslySetInnerHTML={{ 
                       __html: renderMath(editedOptions[index]) 
                     }} 
                     className="text-sm text-gray-600 bg-white p-2 border rounded"
-                  />
+                  /> */}
+                  <MathpixRender text={editedOptions[index]} />
                 </div>
               ))}
             </div>
