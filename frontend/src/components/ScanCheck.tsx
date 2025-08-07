@@ -17,10 +17,13 @@ export default function UploadPDF() {
     formData.append("pdf", file);
 
     try {
-      await axios.post(`${BACKEND}/upload`, formData, {
+      const response = await axios.post(`${BACKEND}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log("Upload successful");
+
+      console.log(response.data);
+      
+
     } catch (err) {
       console.error(err);
       alert("Upload failed");

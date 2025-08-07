@@ -1,16 +1,21 @@
-// import fetch, { FormData, fileFromSync } from 'node-fetch';
-import pkg from 'node-fetch';
-const { FormData, fileFromSync } = pkg;
-
-const scanPdf = (req, res) => {
-    const form = new FormData()
-    form.append('file', fileFromSync(req.file))
-    form.append('options_json', '{"conversion_formats": {"docx": true, "tex.zip": true}, "math_inline_delimiters": ["$", "$"], "rm_spaces": true}');
-
-    if (req.file) {
-        console.log('File uploaded!');
+const scanPdf = async(req, res) => {
+  const pdf_id = await response.data.pdf_id
+      
+      try {
+      const mmd_file = await axios.get(
+        `https://api.mathpix.com/v3/pdf/${pdf_id}.mmd`,
+        {
+          headers: {
+              'app_id': process.env.MATHPIX_API_ID,
+              'app_key': process.env.MATHPIX_API_KEY
+            }
+        }
+      )
+      } catch (error) {
+        console.error(error.message);
+        
+      }
     }
-}
 
 
     /*const form = new FormData();

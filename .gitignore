@@ -120,4 +120,4 @@ dist
 .astro/
 .vscode/
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
-backend/public/temp/
+backend/public/
