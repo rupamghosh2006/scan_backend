@@ -67,6 +67,7 @@ const DEFAULT_CHAPTERS = [
 const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   window.global = window;
+  
   useEffect(() => {
     const loadKaTeX = async () => {
       // Load KaTeX CSS
@@ -91,8 +92,11 @@ const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
     const renderMath = () => {
       if (containerRef.current && window.katex) {
         try {
-          // Replace LaTeX delimiters and render
+          // Replace LaTeX spacing commands and delimiters
           let processedText = text
+            // Replace \quad and \qquad with rule
+            .replace(/\\qquad/g, '\\rule{2cm}{1pt}')
+            .replace(/\\quad/g, '\\rule{1cm}{1pt}')
             // Handle display math ($$...$$)
             .replace(/\$\$([^$]+)\$\$/g, (match, math) => {
               try {
@@ -135,6 +139,9 @@ const ScanCheck: React.FC<Props> = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
+  
+  // Track saved questions by index
+  const [savedQuestions, setSavedQuestions] = useState<Set<number>>(new Set());
 
   // Current question editing state
   const [editedQuestion, setEditedQuestion] = useState('');
@@ -191,6 +198,7 @@ const ScanCheck: React.FC<Props> = ({
         setExtractedQuestions(data.data.questions);
         setCurrentQuestionIndex(0);
         setSavedCount(0);
+        setSavedQuestions(new Set()); // Reset saved questions
         console.log(`Extracted ${data.data.total_questions} questions`);
       } else {
         alert("No questions found in the PDF or processing failed.");
@@ -227,24 +235,31 @@ const ScanCheck: React.FC<Props> = ({
         headers: { "Content-Type": "application/json" },
       });
 
+      // Mark current question as saved
+      setSavedQuestions(prev => new Set([...prev, currentQuestionIndex]));
       setSavedCount(prev => prev + 1);
       
-      // Move to next question or finish
-      if (currentQuestionIndex < extractedQuestions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-      } else {
-        alert(`All ${extractedQuestions.length} questions have been saved successfully!`);
-        // Reset state
-        setExtractedQuestions([]);
-        setCurrentQuestionIndex(0);
-        setSavedCount(0);
-        setFile(null);
-      }
     } catch (err) {
       console.error("Save error:", err);
       alert("Failed to save question. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Go to next question
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < extractedQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      // All questions processed
+      alert(`All ${extractedQuestions.length} questions have been processed! Saved: ${savedCount}`);
+      // Reset state
+      setExtractedQuestions([]);
+      setCurrentQuestionIndex(0);
+      setSavedCount(0);
+      setSavedQuestions(new Set());
+      setFile(null);
     }
   };
 
@@ -264,6 +279,7 @@ const ScanCheck: React.FC<Props> = ({
 
   const currentQuestion = extractedQuestions[currentQuestionIndex];
   const hasQuestions = extractedQuestions.length > 0;
+  const isCurrentQuestionSaved = savedQuestions.has(currentQuestionIndex);
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white min-h-screen">
@@ -314,6 +330,21 @@ const ScanCheck: React.FC<Props> = ({
       {/* Question Editor */}
       {hasQuestions && (
         <div className="bg-gray-50 p-6 rounded-lg border">
+          {/* Question Status Badge */}
+          <div className="mb-4">
+            {isCurrentQuestionSaved ? (
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                Question Saved
+              </div>
+            ) : (
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                Not Saved
+              </div>
+            )}
+          </div>
+
           {/* Progress */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
@@ -343,12 +374,13 @@ const ScanCheck: React.FC<Props> = ({
               value={editedQuestion}
               onChange={(e) => setEditedQuestion(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={4}
+              rows={6}
               placeholder="Edit question text..."
+              disabled={isCurrentQuestionSaved}
             />
             
             {/* KaTeX Preview */}
-            <div className="mt-2 p-3 bg-white border rounded-lg">
+            <div className="mt-2 p-3 h-30 bg-white border rounded-lg">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
               <KaTeXRender text={editedQuestion} />
             </div>
@@ -370,6 +402,7 @@ const ScanCheck: React.FC<Props> = ({
                       checked={correctAnswer === editedOptions[index]}
                       onChange={(e) => setCorrectAnswer(e.target.value)}
                       className="text-blue-600"
+                      disabled={isCurrentQuestionSaved}
                     />
                     <label className="text-sm font-medium text-gray-700">
                       Option {letter} (Correct?)
@@ -389,6 +422,7 @@ const ScanCheck: React.FC<Props> = ({
                     }}
                     className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder={`Option ${letter}`}
+                    disabled={isCurrentQuestionSaved}
                   />
                   {/* Option Preview */}
                   <div className="text-sm text-gray-600 bg-white p-2 border rounded">
@@ -409,6 +443,7 @@ const ScanCheck: React.FC<Props> = ({
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isCurrentQuestionSaved}
               >
                 <option value="11">Class 11</option>
                 <option value="12">Class 12</option>
@@ -423,6 +458,7 @@ const ScanCheck: React.FC<Props> = ({
                 value={selectedChapter}
                 onChange={(e) => setSelectedChapter(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isCurrentQuestionSaved}
               >
                 {chapters.map(chapter => (
                   <option key={chapter} value={chapter}>
@@ -440,6 +476,7 @@ const ScanCheck: React.FC<Props> = ({
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isCurrentQuestionSaved}
               >
                 <option value="bengali">Bengali</option>
                 <option value="english">English</option>
@@ -475,17 +512,27 @@ const ScanCheck: React.FC<Props> = ({
               </button>
             </div>
 
-            <button
-              onClick={handleSaveQuestion}
-              disabled={isSaving}
-              className={`px-6 py-2 rounded-lg font-semibold text-white ${
-                isSaving
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isSaving ? 'Saving...' : '💾 Save Question'}
-            </button>
+            {/* Save/Next Button */}
+            {isCurrentQuestionSaved ? (
+              <button
+                onClick={handleNextQuestion}
+                className="px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700"
+              >
+                {currentQuestionIndex === extractedQuestions.length - 1 ? '🏁 Finish' : 'Next →'}
+              </button>
+            ) : (
+              <button
+                onClick={handleSaveQuestion}
+                disabled={isSaving}
+                className={`px-6 py-2 rounded-lg font-semibold text-white ${
+                  isSaving
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isSaving ? 'Saving...' : '💾 Save Question'}
+              </button>
+            )}
           </div>
         </div>
       )}
