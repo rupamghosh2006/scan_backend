@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import MathpixRender from './MathpixRender.astro';
+
+// KaTeX type declarations
+declare global {
+  interface Window {
+    katex: {
+      renderToString: (tex: string, options?: { displayMode?: boolean }) => string;
+    };
+  }
+}
 
 // Types
 interface Question {
@@ -54,6 +62,67 @@ const DEFAULT_CHAPTERS = [
   "Statistics",
   "Probability"
 ];
+
+// KaTeX Render Component
+const KaTeXRender: React.FC<{ text: string }> = ({ text }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  window.global = window;
+  useEffect(() => {
+    const loadKaTeX = async () => {
+      // Load KaTeX CSS
+      if (!document.querySelector('link[href*="katex"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css';
+        document.head.appendChild(link);
+      }
+
+      // Load KaTeX JS
+      if (!window.katex) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.js';
+        script.onload = () => renderMath();
+        document.head.appendChild(script);
+      } else {
+        renderMath();
+      }
+    };
+
+    const renderMath = () => {
+      if (containerRef.current && window.katex) {
+        try {
+          // Replace LaTeX delimiters and render
+          let processedText = text
+            // Handle display math ($$...$$)
+            .replace(/\$\$([^$]+)\$\$/g, (match, math) => {
+              try {
+                return window.katex.renderToString(math, { displayMode: true });
+              } catch (e) {
+                return match; // Return original if rendering fails
+              }
+            })
+            // Handle inline math ($...$)
+            .replace(/\$([^$]+)\$/g, (match, math) => {
+              try {
+                return window.katex.renderToString(math, { displayMode: false });
+              } catch (e) {
+                return match; // Return original if rendering fails
+              }
+            });
+
+          containerRef.current.innerHTML = processedText;
+        } catch (error) {
+          // Fallback to plain text if rendering fails
+          containerRef.current.textContent = text;
+        }
+      }
+    };
+
+    loadKaTeX();
+  }, [text]);
+
+  return <div ref={containerRef} className="katex-container">{text}</div>;
+};
 
 const ScanCheck: React.FC<Props> = ({ 
   chapters = DEFAULT_CHAPTERS, 
@@ -193,14 +262,6 @@ const ScanCheck: React.FC<Props> = ({
     }
   };
 
-  // Render KaTeX (basic implementation)
-  {/*const renderMath = (text: string) => {
-    // Simple math rendering - replace with actual KaTeX if needed
-    return text
-      .replace(/\$([^$]+)\$/g, '<span style="font-style: italic; color: #2563eb;">$1</span>')
-      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<sup>$1</sup>/<sub>$2</sub>');
-  };*/}
-
   const currentQuestion = extractedQuestions[currentQuestionIndex];
   const hasQuestions = extractedQuestions.length > 0;
 
@@ -289,13 +350,7 @@ const ScanCheck: React.FC<Props> = ({
             {/* KaTeX Preview */}
             <div className="mt-2 p-3 bg-white border rounded-lg">
               <p className="text-xs text-gray-500 mb-1">Preview:</p>
-              {/* <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: renderMath(editedQuestion) 
-                }} 
-                className="text-gray-800"
-              /> */}
-              <MathpixRender text={editedQuestion} />
+              <KaTeXRender text={editedQuestion} />
             </div>
           </div>
 
@@ -336,13 +391,9 @@ const ScanCheck: React.FC<Props> = ({
                     placeholder={`Option ${letter}`}
                   />
                   {/* Option Preview */}
-                  {/* <div 
-                    dangerouslySetInnerHTML={{ 
-                      __html: renderMath(editedOptions[index]) 
-                    }} 
-                    className="text-sm text-gray-600 bg-white p-2 border rounded"
-                  /> */}
-                  <MathpixRender text={editedOptions[index]} />
+                  <div className="text-sm text-gray-600 bg-white p-2 border rounded">
+                    <KaTeXRender text={editedOptions[index]} />
+                  </div>
                 </div>
               ))}
             </div>
