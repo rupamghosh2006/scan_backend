@@ -1,14 +1,9 @@
 import axios from 'axios';
 import FormData from 'form-data';
 import * as fs from 'fs';
-import path from 'path';
 
 function extractQuestionsImproved(text) {
     const questions = [];
-    
-    // More sophisticated regex patterns for Bengali mathematical text
-    const questionPattern = /(\d+)\.\s*([^(]+?)(?=\s*\([A-D]\))/g;
-    const optionPattern = /\([A-D]\)\s*([^(]+?)(?=\s*\([A-D]\)|\s*\d+\.|$)/g;
     
     // Split into sections and process each
     const sections = text.split(/(?=\d+\.\s)/);
@@ -57,7 +52,7 @@ function extractQuestionsImproved(text) {
             
             questions.push({
                 question: questionText,
-                diagram: null, // No diagrams in this text format
+                diagram: null,
                 options: options
             });
         }
@@ -88,13 +83,13 @@ const upload = async (req, res) => {
         );
         
         const pdf_id = postResponse.data.pdf_id;
-        fs.rmSync(pdf_file.path);
+        fs.rmSync(pdf_file.path); // Clean up uploaded file
         
         console.log(`PDF uploaded successfully. PDF ID: ${pdf_id}`);
         
-        // Poll for completion {Polling is necessary because PDF processing takes time - it's not instant. ~Claude beloved :3}
-        const maxAttempts = 5; // Maximum polling attempts
-        const pollInterval = 3000; // 2 seconds between polls
+        // Poll for completion
+        const maxAttempts = 5;
+        const pollInterval = 7000;
         let attempts = 0;
         let isComplete = false;
         
@@ -119,7 +114,7 @@ const upload = async (req, res) => {
                 if (status === 'completed') {
                     isComplete = true;
                     
-                    // Get the processed data
+                    // Get the processed data directly in memory
                     const resultResponse = await axios.get(
                         `https://api.mathpix.com/v3/pdf/${pdf_id}.mmd`,
                         {
@@ -129,23 +124,20 @@ const upload = async (req, res) => {
                             }
                         }
                     );
-                    const mmdFilename = `${pdf_id}.mmd`;
                     
-                    const publicDir = path.join(process.cwd(), 'public/temp');
-                    const mmdPath = path.join(publicDir, mmdFilename);
-                    fs.writeFileSync(mmdPath, resultResponse.data);
+                    // Extract questions from the MMD content
+                    const extractedQuestions = extractQuestionsImproved(resultResponse.data);
                     
-                    console.log(`Files saved:`);
-                    console.log(`MMD: ${mmdPath}`);
+                    console.log(`Extracted ${extractedQuestions.length} questions`);
                     
+                    // Send JSON response with extracted questions
                     res.status(200).json({
                         success: true,
-                        message: "PDF processed successfully",
+                        message: "PDF processed and questions extracted successfully",
                         data: {
                             pdf_id: pdf_id,
-                            status: status,
-                            mmd_file: mmdFilename,
-                            mmd_path: mmdPath,
+                            total_questions: extractedQuestions.length,
+                            questions: extractedQuestions,
                             processing_time: `${attempts * pollInterval / 1000} seconds`
                         }
                     });
@@ -159,7 +151,6 @@ const upload = async (req, res) => {
                 
             } catch (pollError) {
                 console.error(`Error checking status: ${pollError.message}`);
-                // Continue polling unless it's a critical error
                 if (pollError.response?.status === 404) {
                     throw new Error('PDF not found - may have expired');
                 }
@@ -172,7 +163,7 @@ const upload = async (req, res) => {
         }
         
     } catch (error) {
-        console.error(error);
+        console.error('Upload error:', error);
         res.status(500).json({
             success: false,
             message: "Failed to process PDF",
