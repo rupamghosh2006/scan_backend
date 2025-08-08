@@ -158,13 +158,18 @@ const ScanCheck: React.FC<Props> = ({
 
   // Initialize edited question when current question changes
   useEffect(() => {
-    if (extractedQuestions.length > 0 && currentQuestionIndex < extractedQuestions.length) {
-      const current = extractedQuestions[currentQuestionIndex];
-      setEditedQuestion(current.question);
-      setEditedOptions(current.options.length === 4 ? current.options : ['', '', '', '']);
-      setCorrectAnswer(''); // Reset correct answer for each question
-    }
-  }, [currentQuestionIndex, extractedQuestions]);
+  if (extractedQuestions.length > 0 && currentQuestionIndex < extractedQuestions.length) {
+    const current = extractedQuestions[currentQuestionIndex];
+    setEditedQuestion(current.question);
+    setEditedOptions(
+      Array.isArray(current.options) && current.options.length === 4
+        ? current.options
+        : ['', '', '', '']
+    );
+    setCorrectAnswer('');
+  }
+}, [currentQuestionIndex, extractedQuestions]);
+
 
   // Set default chapter when chapters change
   useEffect(() => {
@@ -217,7 +222,7 @@ const ScanCheck: React.FC<Props> = ({
       });
 
       const data: ExtractedResponse = response.data;
-      console.log(data);
+      console.log(data.data.questions.length, typeof data.data.questions.length);
       
       if (data.success && data.data.questions.length > 0) {
         setExtractedQuestions(data.data.questions);
