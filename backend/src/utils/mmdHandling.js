@@ -1,4 +1,4 @@
-// Add this function to your utils/mmdHandling.js file
+// Enhanced functions for parsing mathematical content with embedded options
 
 function cleanMathpixContent(text) {
     return text
@@ -8,7 +8,7 @@ function cleanMathpixContent(text) {
         .replace(/<math[^>]*>.*?<\/math>/gs, '')
         .replace(/=<span.*?<\/span>/gs, '')
         
-        // Clean up specific artifacts you mentioned
+        // Clean up specific artifacts
         .replace(/=<spanclass="katex−display">.*?<\/span>/gs, '')
         .replace(/class="[^"]*"/g, '')
         .replace(/style="[^"]*"/g, '')
@@ -17,9 +17,18 @@ function cleanMathpixContent(text) {
         .replace(/width="[^"]*"/g, '')
         .replace(/height="[^"]*"/g, '')
         
-        // Remove broken HTML tags
+        // Remove broken HTML tags and entities
         .replace(/<[^>]*>/g, '')
-        .replace(/&[a-zA-Z0-9#]+;/g, '') // Remove HTML entities
+        .replace(/&[a-zA-Z0-9#]+;/g, '')
+        
+        // Fix spacing between text and mathematical expressions
+        .replace(/(\w)(\$\\vec\{)/g, '$1 $2') // Specific fix for vectors
+        .replace(/(\w)(\$[^$]*\$)/g, '$1 $2') // General: word followed by complete math expression
+        .replace(/(\$[^$]*\$)(\w)/g, '$1 $2') // General: complete math expression followed by word
+        .replace(/field\$\\vec\{B\}\$/g, 'field $\\vec{B}$') // Specific examples
+        .replace(/element\$\\vec\{I\}\$/g, 'element $\\vec{I}$')
+        .replace(/distance\$\\vec\{r\}\$/g, 'distance $\\vec{r}$')
+        .replace(/current\$i\$/g, 'current $i$')
         
         // Clean up mathematical expressions
         .replace(/\$\s*\$\s*/g, ' ') // Remove empty math delimiters
@@ -31,33 +40,144 @@ function cleanMathpixContent(text) {
         .replace(/\n\s*\n\s*\n+/g, '\n\n') // Remove excessive line breaks
         
         // Clean up table formatting
-        .replace(/\\hline\s*/g, '\\hline\n') // Proper line breaks after hline
-        .replace(/\\\\\s*\\hline/g, '\\\\\n\\hline') // Fix table row endings
+        .replace(/\\hline\s*/g, '\\hline\n')
+        .replace(/\\\\\s*\\hline/g, '\\\\\n\\hline')
         
         .trim();
 }
 
-function cleanTableContent(tableText) {
-    return tableText
-        // Fix table structure
-        .replace(/\\begin\{tabular\}\{[^}]*\}/g, (match) => {
-            // Ensure proper table column definition
-            const columnDef = match.includes('|l|l|') ? '{|l|l|}' : '{|c|c|}';
-            return `\\begin{tabular}${columnDef}`;
-        })
-        
-        // Clean cell content
-        .replace(/\s*&\s*/g, ' & ') // Normalize cell separators
-        .replace(/\\\\\s*/g, ' \\\\\n') // Proper row endings
-        
-        // Remove HTML artifacts within cells
-        .replace(/\[[a-z]\]\s*\$([^$]*)\$/g, '[$1] $$2$$') // Fix option formatting
-        .replace(/\[([iv]+)\]/g, '[$1]') // Ensure proper option numbering
-        
-        .trim();
+// Enhanced function to extract mathematical options
+function extractMathematicalOptions(text) {
+    const options = [];
+    
+    // Pattern 1: Look for (a), (b), (c), (d) patterns in LaTeX
+    const mathPattern1 = /\(([abcdABCD])\)\s*([^()]*?)(?=\s*\([abcdABCD]\)|$)/g;
+    let matches = [...text.matchAll(mathPattern1)];
+    
+    if (matches.length >= 4) {
+        for (let i = 0; i < 4; i++) {
+            if (matches[i] && matches[i][2]) {
+                options.push(matches[i][2].trim());
+            }
+        }
+        return options;
+    }
+    
+    // Pattern 2: Look for mathematical expressions with option markers
+    const mathPattern2 = /\$([^$]*?)\$\s*\(([abcdABCD])\)/g;
+    matches = [...text.matchAll(mathPattern2)];
+    
+    if (matches.length >= 4) {
+        for (let i = 0; i < 4; i++) {
+            if (matches[i] && matches[i][1]) {
+                options.push(`$${matches[i][1].trim()}$`);
+            }
+        }
+        return options;
+    }
+    
+    // Pattern 3: Extract from structured mathematical text
+    const structuredPattern = /(?:^|[^\\a-zA-Z])(\\\w+\{[^}]*\}(?:\{[^}]*\})*)\s*\(([abcdABCD])\)/g;
+    matches = [...text.matchAll(structuredPattern)];
+    
+    if (matches.length >= 4) {
+        for (let i = 0; i < 4; i++) {
+            if (matches[i] && matches[i][1]) {
+                options.push(matches[i][1].trim());
+            }
+        }
+        return options;
+    }
+    
+    // Pattern 4: Split by common mathematical separators and look for options
+    const parts = text.split(/(?=\([abcdABCD]\))/);
+    for (const part of parts) {
+        const optMatch = part.match(/^\(([abcdABCD])\)\s*(.*)$/);
+        if (optMatch && options.length < 4) {
+            options.push(optMatch[2].trim());
+        }
+    }
+    
+    return options.slice(0, 4);
 }
 
-// Enhanced question extraction with content cleaning
+// Enhanced function to separate question from options in mathematical text
+function separateQuestionFromOptions(text) {
+    const cleanedText = cleanMathpixContent(text);
+    
+    // Remove question number at the beginning
+    const textWithoutNumber = cleanedText.replace(/^\s*\d+\.\s*/, '');
+    
+    // Find the first occurrence of an option pattern
+    const firstOptionMatch = textWithoutNumber.match(/\([abcdABCD]\)/);
+    
+    if (firstOptionMatch) {
+        const optionStartIndex = textWithoutNumber.indexOf(firstOptionMatch[0]);
+        const questionPart = textWithoutNumber.substring(0, optionStartIndex).trim();
+        const optionsPart = textWithoutNumber.substring(optionStartIndex).trim();
+        
+        const options = extractMathematicalOptions(optionsPart);
+        
+        return {
+            question: questionPart,
+            options: options
+        };
+    }
+    
+    // If no clear option pattern found, try to extract from the entire text
+    const options = extractMathematicalOptions(textWithoutNumber);
+    if (options.length > 0) {
+        // Remove option parts from question
+        let questionText = textWithoutNumber;
+        options.forEach((option, index) => {
+            const optionLetter = String.fromCharCode(97 + index); // a, b, c, d
+            const patterns = [
+                new RegExp(`\\(${optionLetter}\\)\\s*${option.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'),
+                new RegExp(`\\(${optionLetter.toUpperCase()}\\)\\s*${option.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi')
+            ];
+            patterns.forEach(pattern => {
+                questionText = questionText.replace(pattern, '').trim();
+            });
+        });
+        
+        return {
+            question: questionText,
+            options: options
+        };
+    }
+    
+    return {
+        question: textWithoutNumber,
+        options: []
+    };
+}
+
+// Main parsing function for frontend use
+function parseQuestionAndOptions(text) {
+    const result = separateQuestionFromOptions(text);
+    
+    // Post-process question for better formatting
+    let cleanQuestion = result.question
+        .replace(/field\$\\vec\{B\}\$/g, 'field $\\vec{B}$')
+        .replace(/element\$\\vec\{I\}\$/g, 'element $\\vec{I}$')
+        .replace(/distance\$\\vec\{r\}\$/g, 'distance $\\vec{r}$')
+        .replace(/current\$i\$/g, 'current $i$')
+        .replace(/(\w)\$([^$]+)\$/g, '$1 $$2$') // General fix for word+math
+        .replace(/\s+/g, ' ')
+        .trim();
+    
+    // Ensure we have exactly 4 options (pad with empty strings if needed)
+    while (result.options.length < 4) {
+        result.options.push('');
+    }
+    
+    return {
+        question: cleanQuestion,
+        options: result.options.slice(0, 4)
+    };
+}
+
+// Enhanced question extraction with better mathematical content handling
 function extractQuestionsImproved(text) {
     const questions = [];
     
@@ -97,84 +217,32 @@ function extractQuestionsImproved(text) {
         const hasFillInBlank = section.includes('_____') || questionText.includes('=') && questionText.includes('।');
         
         // Build complete question text
-        while (currentLineIndex < lines.length) {
-            const currentLine = lines[currentLineIndex];
-            
-            if (currentLine.match(/^\([A-D]\)/)) {
-                break;
-            }
-            
-            if (currentLine.match(/^\d+\.\s/)) {
-                break;
-            }
-            
-            if (currentLine.length > 0) {
-                if (hasTabular || hasColumnMatching) {
-                    questionText += '\n' + currentLine;
-                } else if (currentLine.includes('\\') && 
-                          (currentLine.includes('begin') || 
-                           currentLine.includes('end') || 
-                           currentLine.includes('&') || 
-                           currentLine.includes('\\\\'))) {
-                    questionText += '\n' + currentLine;
-                } else if (currentLine.includes('$') ||
-                          currentLine.includes('=') ||
-                          currentLine.includes('হয়') ||
-                          currentLine.includes('হলে') ||
-                          currentLine.includes('তবে') ||
-                          currentLine.includes('তারে') ||
-                          /[০-৯]/.test(currentLine) ||
-                          /^[A-D]/.test(currentLine.replace(/[()]/g, ''))) {
-                    questionText += ' ' + currentLine;
-                }
-            }
-            currentLineIndex++;
+        const fullSectionText = lines.join(' ');
+        
+        // Use the enhanced separation function
+        const parsed = separateQuestionFromOptions(fullSectionText);
+        
+        if (parsed.question) {
+            questionText = parsed.question;
         }
         
-        // Clean table content specifically
-        if (hasTabular) {
-            const tabularMatch = section.match(/\\begin\{tabular\}.*?\\end\{tabular\}/s);
-            if (tabularMatch) {
-                const cleanedTable = cleanTableContent(tabularMatch[0]);
-                if (!questionText.includes(cleanedTable)) {
-                    questionText = questionText.replace(tabularMatch[0], cleanedTable);
+        let options = parsed.options;
+        
+        // If no options found, try fallback methods
+        if (options.length === 0) {
+            const remainingLines = lines.slice(currentLineIndex);
+            const remainingText = remainingLines.join(' ');
+            
+            const standardOptions = [...remainingText.matchAll(/\([A-D]\)\s*([^(]+?)(?=\s*\([A-D]\)|$)/g)];
+            
+            if (standardOptions.length >= 4) {
+                for (let i = 0; i < 4; i++) {
+                    options.push(standardOptions[i][1].trim());
                 }
             }
         }
         
-        // Extract options
-        const options = [];
-        const remainingLines = lines.slice(currentLineIndex);
-        const remainingText = remainingLines.join(' ');
-        
-        const standardOptions = [...remainingText.matchAll(/\([A-D]\)\s*([^(]+?)(?=\s*\([A-D]\)|$)/g)];
-        
-        if (standardOptions.length >= 4) {
-            for (let i = 0; i < 4; i++) {
-                options.push(standardOptions[i][1].trim());
-            }
-        } else {
-            for (const line of remainingLines) {
-                const lineOptions = [...line.matchAll(/\([A-D]\)\s*([^(]+?)(?=\s*\([A-D]\)|$)/g)];
-                for (const match of lineOptions) {
-                    if (options.length < 4) {
-                        options.push(match[1].trim());
-                    }
-                }
-            }
-            
-            if (hasColumnMatching && options.length === 0) {
-                const lastLine = remainingLines[remainingLines.length - 1];
-                if (lastLine && lastLine.includes('[i]') && lastLine.includes('[ii]')) {
-                    const matchingOptions = [...lastLine.matchAll(/\([A-D]\)\s*([^(]+?)(?=\s*\([A-D]\)|$)/g)];
-                    for (let i = 0; i < Math.min(4, matchingOptions.length); i++) {
-                        options.push(matchingOptions[i][1].trim());
-                    }
-                }
-            }
-        }
-        
-        // Final cleaning of question text
+        // Final cleaning of question text with proper spacing
         questionText = questionText
             .replace(/\s+/g, ' ')
             .replace(/হলে\s*নীচের\s*কোন্টি/g, 'হলে নীচের কোনটি')
@@ -182,6 +250,9 @@ function extractQuestionsImproved(text) {
             .replace(/\s*=\s*/g, '=')
             .replace(/\$\s+/g, '$')
             .replace(/\s+\$/g, '$')
+            // Additional spacing fixes for mathematical content
+            .replace(/(\w)(\$)/g, '$1 $2')
+            .replace(/(\$)(\w)/g, '$1 $2')
             .trim();
         
         const questionType = determineQuestionType(questionText, options, hasTabular, hasColumnMatching, hasFillInBlank);
@@ -223,4 +294,10 @@ function determineQuestionType(questionText, options, hasTabular, hasColumnMatch
     }
 }
 
-export { extractQuestionsImproved, cleanMathpixContent, cleanTableContent };
+export { 
+    extractQuestionsImproved, 
+    cleanMathpixContent, 
+    extractMathematicalOptions,
+    separateQuestionFromOptions,
+    parseQuestionAndOptions 
+};
