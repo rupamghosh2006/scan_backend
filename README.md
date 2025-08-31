@@ -48,5 +48,5 @@ To overcome these challenges, the teacher envisioned a **dedicated web applicati
 
 - **Result Processing & Leaderboard**  
   - Automatic evaluation of tests.  
-  - A downloadable **leaderboard view** for teachers to instantly compare student performance.  
+  - A downloadable **leaderboard view** for teachers to instantly compare students' performance.  
  
