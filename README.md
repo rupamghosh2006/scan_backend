@@ -45,8 +45,6 @@ To overcome these challenges, the teacher envisioned a **dedicated web applicati
   - Enhanced exam security measures such as:  
     - Restricted navigation.  
     - Random question shuffling.  
-    - Session monitoring.  
-    - Unique login for each student.  
 
 - **Result Processing & Leaderboard**  
   - Automatic evaluation of tests.  
